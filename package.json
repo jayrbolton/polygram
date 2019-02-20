@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "start": "budo --live --open index.js",
+    "build": "browserify index.js > docs/bundle.js && cp index.html docs/index.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "jayrbolton <jayrbolton@protonmail.com> (http://www.jayrbolton.com)",
   "license": "MIT",
   "devDependencies": {
+    "browserify": "^16.2.3",
     "budo": "^11.6.0"
   },
   "dependencies": {
