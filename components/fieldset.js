@@ -10,12 +10,12 @@ function fieldset (children) {
         'padding: 0.2rem 0 0.2rem 0'
       ],
       ' > label': [
-        'width: 6rem',
+        'width: 12rem',
         'margin-right: 1rem',
         'display: inline-block'
       ],
       ' > input': [
-        'width: 6rem'
+        'width: 4rem'
       ]
     }
   }, children)

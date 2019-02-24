@@ -12,5 +12,5 @@ function newElemButton (parentCmp, constructor, name) {
         parentCmp._render()
       }
     }
-  }, ['add ', name])
+  }, ['Add ', name])
 }

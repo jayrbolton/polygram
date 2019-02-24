@@ -1,5 +1,17 @@
 const { Component, h } = require('uzu')
 
+// TODO
+// - global constants
+// - readable field names
+// - cache evaluated props
+// - grid of rectangles, evenly spaced x and y
+// - try to remove ctx.save and restore
+// - checkboxes for fill, stroke, etc
+// - general shapes
+// - canvas fill
+// - when creating an elem, repeat props from last elem
+// - ++ keyframes
+
 // Components
 const { Rectangle } = require('./components/Rectangle')
 
@@ -70,7 +82,11 @@ function CanvasState () {
       })
       return h('div', {
         css: {
-          root: ['width: 300px', 'float: left']
+          root: [
+            'width: 300px',
+            'float: left',
+            'background: #f8f8f8'
+          ]
         }
       }, [
         fieldset([
