@@ -4,8 +4,8 @@ const { Component, h } = require('uzu')
 const { Rectangle } = require('./components/Rectangle')
 
 // Utils/views
-// const field = require('./utils/field')
 const newElemButton = require('./utils/newElemButton')
+const fieldset = require('./components/fieldset')
 
 function App () {
   const canvasState = CanvasState()
@@ -53,23 +53,27 @@ function CanvasState () {
     elems: { },
     elemOrder: [],
     view () {
-      const elems = this.elemOrder.map(group => {
-        return h('div', [
-          h('p', { on: { click: () => { group.toggleFormOpen() } } }, group.name),
-          group.view(),
+      const elems = this.elemOrder.map(elem => {
+        return h('div', { key: elem.name }, [
+          h('p', { on: { click: () => { elem.toggleFormOpen() } } }, elem.name),
+          elem.view(),
           h('button', {
             on: {
               click: () => {
-                delete this.elems[group.name]
-                this.elemOrder = this.elemOrder.filter(e => e.name !== group.name)
+                delete this.elems[elem.name]
+                this.elemOrder = this.elemOrder.filter(e => e.name !== elem.name)
                 this._render()
               }
             }
-          }, ['Remove ', group.name])
+          }, ['Remove ', elem.name])
         ])
       })
-      return h('div', { style: { width: '300px', float: 'left' } }, [
-        h('fieldset', [
+      return h('div', {
+        css: {
+          root: ['width: 300px', 'float: left']
+        }
+      }, [
+        fieldset([
           h('label', 'canvas-width'),
           h('input', {
             props: { type: 'number', value: this.vars.canvasWidth() },
@@ -82,7 +86,7 @@ function CanvasState () {
             }
           })
         ]),
-        h('fieldset', [
+        fieldset([
           h('label', 'canvas-height'),
           h('input', {
             props: { type: 'number', value: this.vars.canvasHeight() },
@@ -129,10 +133,12 @@ function Canvas (canvasState) {
   return Component({
     view () {
       return h('canvas', {
-        style: {
-          position: 'fixed',
-          top: 0,
-          left: '320px'
+        css: {
+          root: [
+            'position: fixed',
+            'top: 0',
+            'left: 320px'
+          ]
         },
         props: {
           id: 'tutorial'

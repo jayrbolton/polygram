@@ -1,6 +1,6 @@
 const { Component, h } = require('uzu')
 
-const field = require('../utils/field')
+const field = require('./field')
 const evaluate = require('../utils/evaluate')
 
 module.exports = { Rectangle }

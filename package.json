@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "budo --live --open index.js",
+    "start": "budo --live --open index.js:bundle.js",
     "build": "browserify index.js > docs/bundle.js && cp index.html docs/index.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,6 +15,6 @@
     "budo": "^11.6.0"
   },
   "dependencies": {
-    "uzu": "^0.2.1"
+    "uzu": "0.3.0"
   }
 }

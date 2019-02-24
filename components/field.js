@@ -1,10 +1,10 @@
 const { h } = require('uzu')
-// const evaluate = require('./evaluate')
+const fieldset = require('./fieldset')
 
 module.exports = field
 
 function field (elem, prop, vars) {
-  return h('fieldset', [
+  return fieldset([
     h('label', prop),
     h('input', {
       props: {
