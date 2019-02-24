@@ -45,28 +45,29 @@ function Rectangle (canvasState) {
       }
     },
     drawOne (ctx, i) {
+      let props = {}
+      for (let name in this.props) {
+        props[name] = evaluate(this.props[name], this.props)
+      }
       this.props.i = i
-      const strokeWidth = this.props.strokeWidth
-      const rotate = evaluate(this.props.rotate, this.props)
-      const x = evaluate(this.props.x, this.props)
-      const y = evaluate(this.props.y, this.props)
+      const strokeWidth = props.strokeWidth
+      const x = props.x
+      const y = props.y
       ctx.save()
-      if (rotate) {
-        const rotx = x + evaluate(this.props.rotateX, this.props)
-        const roty = y + evaluate(this.props.rotateY, this.props)
+      if (props.rotate) {
+        const rotx = x + props.rotateX
+        const roty = y + props.rotateY
         ctx.translate(rotx, roty)
-        ctx.rotate(rotate)
+        ctx.rotate(props.rotate)
         ctx.translate(-rotx, -roty)
       }
-      const scaleX = evaluate(this.props.scaleX, this.props)
-      const scaleY = evaluate(this.props.scaleY, this.props)
-      ctx.scale(scaleX, scaleY)
-      ctx.fillStyle = 'rgba(' + this.props.fillRed + ', ' + this.props.fillGreen + ', ' + this.props.fillBlue + ', ' + this.props.fillAlpha + ')'
-      ctx.fillRect(x, y, this.props.width, this.props.height)
+      ctx.scale(props.scaleX, props.scaleY)
+      ctx.fillStyle = 'rgba(' + props.fillRed + ', ' + props.fillGreen + ', ' + props.fillBlue + ', ' + props.fillAlpha + ')'
+      ctx.fillRect(x, y, props.width, props.height)
       if (strokeWidth) {
-        ctx.strokeStyle = 'rgba(' + this.props.strokeRed + ', ' + this.props.strokeGreen + ', ' + this.props.strokeBlue + ', ' + this.props.strokeAlpha + ')'
+        ctx.strokeStyle = 'rgba(' + props.strokeRed + ', ' + props.strokeGreen + ', ' + props.strokeBlue + ', ' + props.strokeAlpha + ')'
         ctx.lineWidth = strokeWidth
-        ctx.strokeRect(x, y, this.props.width, this.props.height)
+        ctx.strokeRect(x, y, props.width, props.height)
       }
       ctx.restore()
     },
