@@ -38,18 +38,6 @@ const start = window.performance.now()
 
 function CanvasState () {
   return Component({
-    // Builtin math functions
-    funcs: {
-      neg: ([x]) => [-x],
-      mod: ([x, y]) => [x % y],
-      mul: ([x, y]) => [x * y],
-      add: ([x, y]) => [x + y],
-      sum: (xs) => [xs.reduce((s, n) => s + n, 0)],
-      sub: ([x, y]) => [x - y],
-      div: ([x, y]) => [x / y],
-      all: (xs) => [xs.reduce((acc, x) => acc && x, true)],
-      any: (xs) => [xs.reduce((acc, x) => acc || x, false)]
-    },
     // Dynamic variables for use in properties
     vars: {
       canvasWidth: () => 1000,
@@ -67,22 +55,33 @@ function CanvasState () {
     view () {
       const elems = this.elemOrder.map(elem => {
         return h('div', { key: elem.name }, [
-          h('p', { on: { click: () => { elem.toggleFormOpen() } } }, elem.name),
-          elem.view(),
-          h('button', {
-            on: {
-              click: () => {
-                delete this.elems[elem.name]
-                this.elemOrder = this.elemOrder.filter(e => e.name !== elem.name)
-                this._render()
-              }
-            }
-          }, ['Remove ', elem.name])
+          h('div', {
+            css: {
+              root: [
+                'font-weight: bold',
+                'cursor: pointer',
+                'border-bottom: 1px solid #bbb',
+                'margin: 1rem 0 0.5rem 0',
+                'overflow: auto',
+                'padding-right: 1.5rem'
+              ],
+              ' .removeButton': [
+                'float: right',
+                'margin-bottom: 0.5rem'
+              ]
+            },
+            on: { click: () => { elem.toggleFormOpen() } }
+          }, [
+            elem.name,
+            removeButton(this, elem)
+          ]),
+          elem.view()
         ])
       })
       return h('div', {
         css: {
           root: [
+            'padding: 1rem',
             'width: 300px',
             'float: left',
             'background: #f8f8f8'
@@ -90,7 +89,7 @@ function CanvasState () {
         }
       }, [
         fieldset([
-          h('label', 'canvas-width'),
+          h('label', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
           h('input', {
             props: { type: 'number', value: this.vars.canvasWidth() },
             on: {
@@ -103,7 +102,7 @@ function CanvasState () {
           })
         ]),
         fieldset([
-          h('label', 'canvas-height'),
+          h('label', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
           h('input', {
             props: { type: 'number', value: this.vars.canvasHeight() },
             on: {
@@ -115,8 +114,16 @@ function CanvasState () {
             }
           })
         ]),
-        // newElemButton(this, Value, 'value'),
-        newElemButton(this, Rectangle, 'rectangle'),
+        h('div', {
+          css: {
+            root: [
+              'padding-top: 0.5rem'
+            ]
+          }
+        }, [
+          // newElemButton(this, Value, 'value'),
+          newElemButton(this, Rectangle, 'rectangle')
+        ]),
         h('div', elems)
       ])
     }
@@ -184,6 +191,18 @@ function Canvas (canvasState) {
       })
     }
   })
+}
+
+function removeButton (app, elem) {
+  return h('button.removeButton', {
+    on: {
+      click: () => {
+        delete app.elems[elem.name]
+        app.elemOrder = app.elemOrder.filter(e => e.name !== elem.name)
+        app._render()
+      }
+    }
+  }, ['Remove'])
 }
 
 // Get the mouse x/y coords globally

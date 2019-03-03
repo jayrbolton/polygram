@@ -5,7 +5,7 @@ module.exports = field
 
 function field (elem, prop, vars) {
   return fieldset([
-    h('label', prop),
+    h('label', { css: { root: ['font-family: mono'] } }, prop),
     h('input', {
       props: {
         type: 'text',
