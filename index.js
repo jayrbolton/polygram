@@ -62,8 +62,7 @@ function CanvasState () {
                 'cursor: pointer',
                 'border-bottom: 1px solid #bbb',
                 'margin: 1rem 0 0.5rem 0',
-                'overflow: auto',
-                'padding-right: 1.5rem'
+                'overflow: auto'
               ],
               ' .removeButton': [
                 'float: right',

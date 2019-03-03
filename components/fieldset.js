@@ -6,16 +6,18 @@ function fieldset (children) {
   return h('fieldset', {
     css: {
       root: [
+        'overflow: auto',
         'border: none',
         'padding: 0.2rem 0 0.2rem 0'
       ],
       ' > label': [
-        'width: 12rem',
-        'margin-right: 1rem',
         'display: inline-block'
       ],
-      ' > input': [
-        'width: 4rem'
+      ' input': [
+        'width: 5rem',
+        'margin-left: 0.5rem'
+      ],
+      ' > .inputs': [
       ]
     }
   }, children)

@@ -1,22 +1,22 @@
 const { h } = require('uzu')
 const fieldset = require('./fieldset')
 
-module.exports = field
+module.exports = fields
 
-function field (elem, prop, vars) {
-  return fieldset([
-    h('label', { css: { root: ['font-family: mono'] } }, prop),
-    h('input', {
-      props: {
-        type: 'text',
-        value: elem.props[prop]
-      },
+function fields (elem, label, props, vars) {
+  const inputs = props.map(p => {
+    return h('input', {
+      props: { type: 'text', value: elem.props[p] },
       on: {
         input: ev => {
           const val = ev.currentTarget.value
-          elem.props[prop] = val
+          elem.props[p] = val
         }
       }
     })
+  })
+  return fieldset([
+    h('label', label),
+    h('div', { css: { root: [ 'float: right' ] } }, inputs)
   ])
 }

@@ -1,6 +1,6 @@
 const { Component, h } = require('uzu')
 
-const field = require('./field')
+const fields = require('./field')
 const evaluate = require('../utils/evaluate')
 
 module.exports = { Rectangle }
@@ -28,7 +28,7 @@ function Rectangle (canvasState) {
       strokeBlue: 0,
       strokeAlpha: 1,
       strokeWidth: 0,
-      rotate: 0,
+      radians: 0,
       rotateX: 0,
       rotateY: 0,
       scaleX: 1,
@@ -54,11 +54,11 @@ function Rectangle (canvasState) {
       const x = props.x
       const y = props.y
       ctx.save()
-      if (props.rotate) {
+      if (props.radians) {
         const rotx = x + props.rotateX
         const roty = y + props.rotateY
         ctx.translate(rotx, roty)
-        ctx.rotate(props.rotate)
+        ctx.rotate(props.radians)
         ctx.translate(-rotx, -roty)
       }
       ctx.scale(props.scaleX, props.scaleY)
@@ -75,25 +75,15 @@ function Rectangle (canvasState) {
       if (!this.formOpen) return h('div', '')
       const vars = this.props
       return h('div', [
-        field(this, 'copies', vars),
-        field(this, 'width', vars),
-        field(this, 'height', vars),
-        field(this, 'x', vars),
-        field(this, 'y', vars),
-        field(this, 'fillRed', vars),
-        field(this, 'fillGreen', vars),
-        field(this, 'fillBlue', vars),
-        field(this, 'fillAlpha', vars),
-        field(this, 'strokeRed', vars),
-        field(this, 'strokeGreen', vars),
-        field(this, 'strokeBlue', vars),
-        field(this, 'strokeAlpha', vars),
-        field(this, 'strokeWidth', vars),
-        field(this, 'rotate', vars),
-        field(this, 'rotateX', vars),
-        field(this, 'rotateY', vars),
-        field(this, 'scaleX', vars),
-        field(this, 'scaleY', vars)
+        fields(this, 'copies', ['copies'], vars),
+        fields(this, 'width & height', ['width', 'height'], vars),
+        fields(this, 'x, y', ['x', 'y'], vars),
+        fields(this, 'fill RGBA', ['fillRed', 'fillGreen', 'fillBlue', 'fillAlpha'], vars),
+        fields(this, 'stroke RGBA', ['strokeRed', 'strokeGreen', 'strokeBlue', 'strokeAlpha'], vars),
+        fields(this, 'stroke width', ['strokeWidth'], vars),
+        fields(this, 'radians', ['radians'], vars),
+        fields(this, 'origin XY', ['rotateX', 'rotateY'], vars),
+        fields(this, 'scale XY', ['scaleX', 'scaleY'], vars)
       ])
     }
   })

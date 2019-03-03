@@ -2,7 +2,7 @@ label, p, div, span {
   font-family: sans-serif;
 }
 
-textarea, input {
+textarea, input, label {
   font-family: monospace;
 }
 
