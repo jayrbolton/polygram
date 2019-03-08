@@ -4,7 +4,7 @@ const fieldset = require('./fieldset')
 module.exports = field
 
 function field (elem, label, prop, vars) {
-  const inputs = h('input', {
+  const inputs = h('input.w-100.code.f6.pa1', {
     props: { type: 'text', value: elem.props[prop] },
     on: {
       input: ev => {
@@ -14,7 +14,7 @@ function field (elem, label, prop, vars) {
     }
   })
   return fieldset([
-    h('label', label),
+    h('label.code', label),
     h('div', { css: { root: [ 'float: right' ] } }, inputs)
   ])
 }

@@ -1,7 +1,7 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 const { Component, h } = require('uzu')
 
-const field = require('../utils/field')
+const field = require('./field')
 const evaluate = require('../utils/evaluate')
 
 module.exports = { Rectangle }
@@ -29,7 +29,7 @@ function Rectangle (canvasState) {
       strokeBlue: 0,
       strokeAlpha: 1,
       strokeWidth: 0,
-      rotate: 0,
+      radians: 0,
       rotateX: 0,
       rotateY: 0,
       scaleX: 1,
@@ -46,28 +46,29 @@ function Rectangle (canvasState) {
       }
     },
     drawOne (ctx, i) {
+      let props = {}
+      for (let name in this.props) {
+        props[name] = evaluate(this.props[name], this.props)
+      }
       this.props.i = i
-      const strokeWidth = this.props.strokeWidth
-      const rotate = evaluate(this.props.rotate, this.props)
-      const x = evaluate(this.props.x, this.props)
-      const y = evaluate(this.props.y, this.props)
+      const strokeWidth = props.strokeWidth
+      const x = props.x
+      const y = props.y
       ctx.save()
-      if (rotate) {
-        const rotx = x + evaluate(this.props.rotateX, this.props)
-        const roty = y + evaluate(this.props.rotateY, this.props)
+      if (props.radians) {
+        const rotx = x + props.rotateX
+        const roty = y + props.rotateY
         ctx.translate(rotx, roty)
-        ctx.rotate(rotate)
+        ctx.rotate(props.radians)
         ctx.translate(-rotx, -roty)
       }
-      const scaleX = evaluate(this.props.scaleX, this.props)
-      const scaleY = evaluate(this.props.scaleY, this.props)
-      ctx.scale(scaleX, scaleY)
-      ctx.fillStyle = 'rgba(' + this.props.fillRed + ', ' + this.props.fillGreen + ', ' + this.props.fillBlue + ', ' + this.props.fillAlpha + ')'
-      ctx.fillRect(x, y, this.props.width, this.props.height)
+      ctx.scale(props.scaleX, props.scaleY)
+      ctx.fillStyle = 'rgba(' + props.fillRed + ', ' + props.fillGreen + ', ' + props.fillBlue + ', ' + props.fillAlpha + ')'
+      ctx.fillRect(x, y, props.width, props.height)
       if (strokeWidth) {
-        ctx.strokeStyle = 'rgba(' + this.props.strokeRed + ', ' + this.props.strokeGreen + ', ' + this.props.strokeBlue + ', ' + this.props.strokeAlpha + ')'
+        ctx.strokeStyle = 'rgba(' + props.strokeRed + ', ' + props.strokeGreen + ', ' + props.strokeBlue + ', ' + props.strokeAlpha + ')'
         ctx.lineWidth = strokeWidth
-        ctx.strokeRect(x, y, this.props.width, this.props.height)
+        ctx.strokeRect(x, y, props.width, props.height)
       }
       ctx.restore()
     },
@@ -75,39 +76,96 @@ function Rectangle (canvasState) {
       if (!this.formOpen) return h('div', '')
       const vars = this.props
       return h('div', [
-        field(this, 'copies', vars),
-        field(this, 'width', vars),
-        field(this, 'height', vars),
-        field(this, 'x', vars),
-        field(this, 'y', vars),
-        field(this, 'fillRed', vars),
-        field(this, 'fillGreen', vars),
-        field(this, 'fillBlue', vars),
-        field(this, 'fillAlpha', vars),
-        field(this, 'strokeRed', vars),
-        field(this, 'strokeGreen', vars),
-        field(this, 'strokeBlue', vars),
-        field(this, 'strokeAlpha', vars),
-        field(this, 'strokeWidth', vars),
-        field(this, 'rotate', vars),
-        field(this, 'rotateX', vars),
-        field(this, 'rotateY', vars),
-        field(this, 'scaleX', vars),
-        field(this, 'scaleY', vars)
+        field(this, 'copies', ['copies'], vars),
+        field(this, 'width', ['width'], vars),
+        field(this, 'height', ['height'], vars),
+        field(this, 'x', ['x'], vars),
+        field(this, 'y', ['y'], vars),
+        field(this, 'fill red', ['fillRed'], vars),
+        field(this, 'fill green', ['fillGreen'], vars),
+        field(this, 'fill blue', ['fillBlue'], vars),
+        field(this, 'fill alpha', ['fillAlpha'], vars),
+        field(this, 'stroke red', ['fillAlpha'], vars),
+        field(this, 'stroke green', ['fillAlpha'], vars),
+        field(this, 'stroke blue', ['fillAlpha'], vars),
+        field(this, 'stroke alpha', ['fillAlpha'], vars),
+        field(this, 'stroke width', ['strokeWidth'], vars),
+        field(this, 'radians', ['radians'], vars),
+        field(this, 'origin X', ['originX'], vars),
+        field(this, 'origin Y', ['originY'], vars)
       ])
     }
   })
 }
 
-},{"../utils/evaluate":16,"../utils/field":17,"uzu":15}],2:[function(require,module,exports){
+},{"../utils/evaluate":18,"./field":2,"uzu":17}],2:[function(require,module,exports){
+const { h } = require('uzu')
+const fieldset = require('./fieldset')
+
+module.exports = field
+
+function field (elem, label, prop, vars) {
+  const inputs = h('input.w-100.code.f6.pa1', {
+    props: { type: 'text', value: elem.props[prop] },
+    on: {
+      input: ev => {
+        const val = ev.currentTarget.value
+        elem.props[prop] = val
+      }
+    }
+  })
+  return fieldset([
+    h('label.code', label),
+    h('div', { css: { root: [ 'float: right' ] } }, inputs)
+  ])
+}
+
+},{"./fieldset":3,"uzu":17}],3:[function(require,module,exports){
+const { h } = require('uzu')
+
+module.exports = fieldset
+
+function fieldset (children) {
+  return h('fieldset.bn.pa0.mb2', {
+    css: {
+      root: [
+        'overflow: auto',
+        'border: none',
+        'padding: 0.2rem 0 0.2rem 0'
+      ],
+      ' > label': [
+        'display: inline-block'
+      ],
+      ' input': [
+        'width: 90%',
+        'margin-left: 0.5rem'
+      ],
+      ' > .inputs': [
+      ]
+    }
+  }, children)
+}
+
+},{"uzu":17}],4:[function(require,module,exports){
 const { Component, h } = require('uzu')
+
+// TODO
+// - global constants
+// - cache evaluated formulas as functions
+// - grid of rectangles, evenly spaced x and y
+// - try to remove ctx.save and restore
+// - checkboxes for fill, stroke, etc
+// - general shapes
+// - canvas fill
+// - when creating an elem, repeat props from last elem
+// - ++ keyframes/timed values (start and end with an easing function)
 
 // Components
 const { Rectangle } = require('./components/Rectangle')
 
 // Utils/views
-// const field = require('./utils/field')
 const newElemButton = require('./utils/newElemButton')
+const fieldset = require('./components/fieldset')
 
 function App () {
   const canvasState = CanvasState()
@@ -128,18 +186,6 @@ const start = window.performance.now()
 
 function CanvasState () {
   return Component({
-    // Builtin math functions
-    funcs: {
-      neg: ([x]) => [-x],
-      mod: ([x, y]) => [x % y],
-      mul: ([x, y]) => [x * y],
-      add: ([x, y]) => [x + y],
-      sum: (xs) => [xs.reduce((s, n) => s + n, 0)],
-      sub: ([x, y]) => [x - y],
-      div: ([x, y]) => [x / y],
-      all: (xs) => [xs.reduce((acc, x) => acc && x, true)],
-      any: (xs) => [xs.reduce((acc, x) => acc || x, false)]
-    },
     // Dynamic variables for use in properties
     vars: {
       canvasWidth: () => 1000,
@@ -155,25 +201,30 @@ function CanvasState () {
     elems: { },
     elemOrder: [],
     view () {
-      const elems = this.elemOrder.map(group => {
-        return h('div', [
-          h('p', { on: { click: () => { group.toggleFormOpen() } } }, group.name),
-          group.view(),
-          h('button', {
-            on: {
-              click: () => {
-                delete this.elems[group.name]
-                this.elemOrder = this.elemOrder.filter(e => e.name !== group.name)
-                this._render()
-              }
-            }
-          }, ['Remove ', group.name])
+      const elems = this.elemOrder.map(elem => {
+        return h('div', { key: elem.name }, [
+          h('div.b.pointer.bb.b--black-20.mv1.code.pv1.flex.justify-between', {
+            on: { click: () => { elem.toggleFormOpen() } }
+          }, [
+            elem.name,
+            removeButton(this, elem)
+          ]),
+          elem.view()
         ])
       })
-      return h('div', { style: { width: '300px', float: 'left' } }, [
-        h('fieldset', [
-          h('label', 'canvas-width'),
-          h('input', {
+      return h('div.mw5.bg-light-gray.pa2', {
+        css: {
+          root: [
+            'padding: 1rem',
+            'width: 300px',
+            'float: left',
+            'background: #f8f8f8'
+          ]
+        }
+      }, [
+        fieldset([
+          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
+          h('input.code.f6.pa1', {
             props: { type: 'number', value: this.vars.canvasWidth() },
             on: {
               input: ev => {
@@ -184,9 +235,9 @@ function CanvasState () {
             }
           })
         ]),
-        h('fieldset', [
-          h('label', 'canvas-height'),
-          h('input', {
+        fieldset([
+          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
+          h('input.code.f6.pa1', {
             props: { type: 'number', value: this.vars.canvasHeight() },
             on: {
               input: ev => {
@@ -197,8 +248,10 @@ function CanvasState () {
             }
           })
         ]),
-        // newElemButton(this, Value, 'value'),
-        newElemButton(this, Rectangle, 'rectangle'),
+        h('div', [
+          // newElemButton(this, Value, 'value'),
+          newElemButton(this, Rectangle, 'rectangle')
+        ]),
         h('div', elems)
       ])
     }
@@ -230,11 +283,9 @@ function Value (canvasState) {
 function Canvas (canvasState) {
   return Component({
     view () {
-      return h('canvas', {
+      return h('canvas.fixed.top-0', {
         style: {
-          position: 'fixed',
-          top: 0,
-          left: '320px'
+          left: '16rem'
         },
         props: {
           id: 'tutorial'
@@ -266,6 +317,18 @@ function Canvas (canvasState) {
   })
 }
 
+function removeButton (app, elem) {
+  return h('button.bg-white.ba.b--black-10.f6', {
+    on: {
+      click: () => {
+        delete app.elems[elem.name]
+        app.elemOrder = app.elemOrder.filter(e => e.name !== elem.name)
+        app._render()
+      }
+    }
+  }, ['Remove'])
+}
+
 // Get the mouse x/y coords globally
 document.body.addEventListener('mousemove', ev => {
   document._mouseX = ev.clientX
@@ -274,7 +337,7 @@ document.body.addEventListener('mousemove', ev => {
 
 document.body.appendChild(App().view().elm)
 
-},{"./components/Rectangle":1,"./utils/newElemButton":18,"uzu":15}],3:[function(require,module,exports){
+},{"./components/Rectangle":1,"./components/fieldset":3,"./utils/newElemButton":19,"uzu":17}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var vnode_1 = require("./vnode");
@@ -334,7 +397,7 @@ exports.h = h;
 ;
 exports.default = h;
 
-},{"./is":5,"./vnode":14}],4:[function(require,module,exports){
+},{"./is":7,"./vnode":16}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function createElement(tagName) {
@@ -401,7 +464,7 @@ exports.htmlDomApi = {
 };
 exports.default = exports.htmlDomApi;
 
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.array = Array.isArray;
@@ -410,7 +473,7 @@ function primitive(s) {
 }
 exports.primitive = primitive;
 
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var xlinkNS = 'http://www.w3.org/1999/xlink';
@@ -466,7 +529,7 @@ function updateAttrs(oldVnode, vnode) {
 exports.attributesModule = { create: updateAttrs, update: updateAttrs };
 exports.default = exports.attributesModule;
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function updateClass(oldVnode, vnode) {
@@ -492,7 +555,7 @@ function updateClass(oldVnode, vnode) {
 exports.classModule = { create: updateClass, update: updateClass };
 exports.default = exports.classModule;
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var CAPS_REGEX = /[A-Z]/g;
@@ -531,7 +594,7 @@ function updateDataset(oldVnode, vnode) {
 exports.datasetModule = { create: updateDataset, update: updateDataset };
 exports.default = exports.datasetModule;
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function invokeHandler(handler, vnode, event) {
@@ -627,7 +690,7 @@ exports.eventListenersModule = {
 };
 exports.default = exports.eventListenersModule;
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function updateProps(oldVnode, vnode) {
@@ -654,7 +717,7 @@ function updateProps(oldVnode, vnode) {
 exports.propsModule = { create: updateProps, update: updateProps };
 exports.default = exports.propsModule;
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // Bindig `requestAnimationFrame` like this fixes a bug in IE/Edge. See #360 and #409.
@@ -751,7 +814,7 @@ exports.styleModule = {
 };
 exports.default = exports.styleModule;
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var vnode_1 = require("./vnode");
@@ -1064,7 +1127,7 @@ function init(modules, domApi) {
 }
 exports.init = init;
 
-},{"./h":3,"./htmldomapi":4,"./is":5,"./thunk":13,"./vnode":14}],13:[function(require,module,exports){
+},{"./h":5,"./htmldomapi":6,"./is":7,"./thunk":15,"./vnode":16}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var h_1 = require("./h");
@@ -1112,7 +1175,7 @@ exports.thunk = function thunk(sel, key, fn, args) {
 };
 exports.default = exports.thunk;
 
-},{"./h":3}],14:[function(require,module,exports){
+},{"./h":5}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function vnode(sel, data, children, text, elm) {
@@ -1123,7 +1186,7 @@ function vnode(sel, data, children, text, elm) {
 exports.vnode = vnode;
 exports.default = vnode;
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // Use all useful snabbdom modules
 const patch = require('snabbdom').init([
   require('snabbdom/modules/props').default,
@@ -1158,7 +1221,7 @@ function Component (obj) {
   return obj
 }
 
-},{"snabbdom":12,"snabbdom/h":3,"snabbdom/modules/attributes":6,"snabbdom/modules/class":7,"snabbdom/modules/dataset":8,"snabbdom/modules/eventlisteners":9,"snabbdom/modules/props":10,"snabbdom/modules/style":11}],16:[function(require,module,exports){
+},{"snabbdom":14,"snabbdom/h":5,"snabbdom/modules/attributes":8,"snabbdom/modules/class":9,"snabbdom/modules/dataset":10,"snabbdom/modules/eventlisteners":11,"snabbdom/modules/props":12,"snabbdom/modules/style":13}],18:[function(require,module,exports){
 module.exports = evaluate
 
 // We use `with` and `eval` because it's easy and simple and the security 
@@ -1177,37 +1240,13 @@ function evaluate (str, vars) {
 
 window.evaluate = evaluate
 
-},{}],17:[function(require,module,exports){
-const { h } = require('uzu')
-// const evaluate = require('./evaluate')
-
-module.exports = field
-
-function field (elem, prop, vars) {
-  return h('fieldset', [
-    h('label', prop),
-    h('input', {
-      props: {
-        type: 'text',
-        value: elem.props[prop]
-      },
-      on: {
-        input: ev => {
-          const val = ev.currentTarget.value
-          elem.props[prop] = val
-        }
-      }
-    })
-  ])
-}
-
-},{"uzu":15}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 const { h } = require('uzu')
 
 module.exports = newElemButton
 
 function newElemButton (parentCmp, constructor, name) {
-  return h('button', {
+  return h('button.bg-white.ba.code.pa2.pointer.mb3', {
     on: {
       click: () => {
         const cmp = constructor(parentCmp)
@@ -1216,7 +1255,7 @@ function newElemButton (parentCmp, constructor, name) {
         parentCmp._render()
       }
     }
-  }, ['add ', name])
+  }, ['Add ', name])
 }
 
-},{"uzu":15}]},{},[2]);
+},{"uzu":17}]},{},[4]);

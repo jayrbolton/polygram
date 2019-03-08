@@ -3,7 +3,7 @@ const { h } = require('uzu')
 module.exports = fieldset
 
 function fieldset (children) {
-  return h('fieldset', {
+  return h('fieldset.bn.pa0.mb2', {
     css: {
       root: [
         'overflow: auto',

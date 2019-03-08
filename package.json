@@ -1,20 +1,23 @@
 {
-  "name": "cnvx",
+  "name": "polygram",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "budo --live --open index.js:bundle.js",
-    "build": "browserify index.js > docs/bundle.js && cp index.html docs/index.html",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "browserify index.js > docs/bundle.js && cp index.html docs/index.html && npm run css",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "css": "tachyons index.css > build.css --minify && cp build.css docs/build.css"
   },
   "author": "jayrbolton <jayrbolton@protonmail.com> (http://www.jayrbolton.com)",
   "license": "MIT",
   "devDependencies": {
     "browserify": "^16.2.3",
-    "budo": "^11.6.0"
+    "budo": "^11.6.0",
+    "tachyons-cli": "^1.3.2"
   },
   "dependencies": {
-    "uzu": "0.3.0"
+    "tachyons": "^4.11.1",
+    "uzu": "0.4.0"
   }
 }

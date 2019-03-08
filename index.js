@@ -54,20 +54,7 @@ function CanvasState () {
     view () {
       const elems = this.elemOrder.map(elem => {
         return h('div', { key: elem.name }, [
-          h('div', {
-            css: {
-              root: [
-                'font-weight: bold',
-                'cursor: pointer',
-                'border-bottom: 1px solid #bbb',
-                'margin: 1rem 0 0.5rem 0',
-                'overflow: auto'
-              ],
-              ' .removeButton': [
-                'float: right',
-                'margin-bottom: 0.5rem'
-              ]
-            },
+          h('div.b.pointer.bb.b--black-20.mv1.code.pv1.flex.justify-between', {
             on: { click: () => { elem.toggleFormOpen() } }
           }, [
             elem.name,
@@ -76,7 +63,7 @@ function CanvasState () {
           elem.view()
         ])
       })
-      return h('div', {
+      return h('div.mw5.bg-light-gray.pa2', {
         css: {
           root: [
             'padding: 1rem',
@@ -87,8 +74,8 @@ function CanvasState () {
         }
       }, [
         fieldset([
-          h('label', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
-          h('input', {
+          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
+          h('input.code.f6.pa1', {
             props: { type: 'number', value: this.vars.canvasWidth() },
             on: {
               input: ev => {
@@ -100,8 +87,8 @@ function CanvasState () {
           })
         ]),
         fieldset([
-          h('label', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
-          h('input', {
+          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
+          h('input.code.f6.pa1', {
             props: { type: 'number', value: this.vars.canvasHeight() },
             on: {
               input: ev => {
@@ -112,13 +99,7 @@ function CanvasState () {
             }
           })
         ]),
-        h('div', {
-          css: {
-            root: [
-              'padding-top: 0.5rem'
-            ]
-          }
-        }, [
+        h('div', [
           // newElemButton(this, Value, 'value'),
           newElemButton(this, Rectangle, 'rectangle')
         ]),
@@ -153,13 +134,9 @@ function Value (canvasState) {
 function Canvas (canvasState) {
   return Component({
     view () {
-      return h('canvas', {
-        css: {
-          root: [
-            'position: fixed',
-            'top: 0',
-            'left: 320px'
-          ]
+      return h('canvas.fixed.top-0', {
+        style: {
+          left: '16rem'
         },
         props: {
           id: 'tutorial'
@@ -192,7 +169,7 @@ function Canvas (canvasState) {
 }
 
 function removeButton (app, elem) {
-  return h('button.removeButton', {
+  return h('button.bg-white.ba.b--black-10.f6', {
     on: {
       click: () => {
         delete app.elems[elem.name]
