@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "budo --live --open index.js:bundle.js",
+    "start": "npm run css && budo --live --open index.js:bundle.js",
     "build": "browserify index.js > docs/bundle.js && cp index.html docs/index.html && npm run css",
     "test": "echo \"Error: no test specified\" && exit 1",
     "css": "tachyons index.css > build.css --minify && cp build.css docs/build.css"
