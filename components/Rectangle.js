@@ -1,6 +1,6 @@
 const { Component, h } = require('uzu')
 
-const fields = require('./field')
+const field = require('./field')
 const evaluate = require('../utils/evaluate')
 
 module.exports = { Rectangle }
@@ -75,15 +75,23 @@ function Rectangle (canvasState) {
       if (!this.formOpen) return h('div', '')
       const vars = this.props
       return h('div', [
-        fields(this, 'copies', ['copies'], vars),
-        fields(this, 'width & height', ['width', 'height'], vars),
-        fields(this, 'x, y', ['x', 'y'], vars),
-        fields(this, 'fill RGBA', ['fillRed', 'fillGreen', 'fillBlue', 'fillAlpha'], vars),
-        fields(this, 'stroke RGBA', ['strokeRed', 'strokeGreen', 'strokeBlue', 'strokeAlpha'], vars),
-        fields(this, 'stroke width', ['strokeWidth'], vars),
-        fields(this, 'radians', ['radians'], vars),
-        fields(this, 'origin XY', ['rotateX', 'rotateY'], vars),
-        fields(this, 'scale XY', ['scaleX', 'scaleY'], vars)
+        field(this, 'copies', ['copies'], vars),
+        field(this, 'width', ['width'], vars),
+        field(this, 'height', ['height'], vars),
+        field(this, 'x', ['x'], vars),
+        field(this, 'y', ['y'], vars),
+        field(this, 'fill red', ['fillRed'], vars),
+        field(this, 'fill green', ['fillGreen'], vars),
+        field(this, 'fill blue', ['fillBlue'], vars),
+        field(this, 'fill alpha', ['fillAlpha'], vars),
+        field(this, 'stroke red', ['fillAlpha'], vars),
+        field(this, 'stroke green', ['fillAlpha'], vars),
+        field(this, 'stroke blue', ['fillAlpha'], vars),
+        field(this, 'stroke alpha', ['fillAlpha'], vars),
+        field(this, 'stroke width', ['strokeWidth'], vars),
+        field(this, 'radians', ['radians'], vars),
+        field(this, 'origin X', ['originX'], vars),
+        field(this, 'origin Y', ['originY'], vars)
       ])
     }
   })

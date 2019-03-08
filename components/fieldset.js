@@ -14,7 +14,7 @@ function fieldset (children) {
         'display: inline-block'
       ],
       ' input': [
-        'width: 5rem',
+        'width: 90%',
         'margin-left: 0.5rem'
       ],
       ' > .inputs': [
