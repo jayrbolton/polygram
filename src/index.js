@@ -1,5 +1,7 @@
 const { Component, h } = require('uzu')
 
+const button = require('./components/button')
+
 // TODO
 // - global constants
 // - cache evaluated formulas as functions
@@ -54,10 +56,11 @@ function CanvasState () {
     view () {
       const elems = this.elemOrder.map(elem => {
         return h('div', { key: elem.name }, [
-          h('div.b.pointer.bb.b--black-20.mv1.code.pv1.flex.justify-between', {
-            on: { click: () => { elem.toggleFormOpen() } }
-          }, [
-            elem.name,
+          h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between', [
+            h('span.pointer.dib', {
+              on: { click: () => elem.toggleFormOpen() }
+            }, elem.name),
+            copyButton(this, elem),
             removeButton(this, elem)
           ]),
           elem.view()
@@ -168,6 +171,7 @@ function Canvas (canvasState) {
   })
 }
 
+// Takes the full app component, plus a single element (like a Rectangle)
 function removeButton (app, elem) {
   return h('button.bg-white.ba.b--black-10.f6', {
     on: {
@@ -178,6 +182,18 @@ function removeButton (app, elem) {
       }
     }
   }, ['Remove'])
+}
+
+// Takes the full app component, plus a single element (like a Rectangle)
+function copyButton (canvasState, elem) {
+  return button('Copy', () => {
+    const newElem = Rectangle(canvasState)
+    const props = Object.create(elem.props)
+    newElem.props = props
+    canvasState.elems[newElem.name] = newElem
+    canvasState.elemOrder.push(newElem)
+    canvasState._render()
+  })
 }
 
 // Get the mouse x/y coords globally

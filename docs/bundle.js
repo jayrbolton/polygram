@@ -1,343 +1,4 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-const { Component, h } = require('uzu')
-
-const field = require('./field')
-const evaluate = require('../utils/evaluate')
-
-module.exports = { Rectangle }
-
-let id = 0
-
-const start = window.performance.now()
-
-function Rectangle (canvasState) {
-  return Component({
-    name: 'rect-' + id++,
-    props: {
-      ts: () => window.performance.now() - start,
-      copies: 1,
-      x: 50,
-      y: 50,
-      width: 50,
-      height: 50,
-      fillRed: 0,
-      fillGreen: 0,
-      fillBlue: 100,
-      fillAlpha: 0.5,
-      strokeRed: 0,
-      strokeGreen: 0,
-      strokeBlue: 0,
-      strokeAlpha: 1,
-      strokeWidth: 0,
-      radians: 0,
-      rotateX: 0,
-      rotateY: 0,
-      scaleX: 1,
-      scaleY: 1
-    },
-    formOpen: true,
-    toggleFormOpen () {
-      this.formOpen = !this.formOpen
-      this._render()
-    },
-    draw (ctx) {
-      for (let i = 0; i < this.props.copies; i++) {
-        this.drawOne(ctx, i)
-      }
-    },
-    drawOne (ctx, i) {
-      let props = {}
-      for (let name in this.props) {
-        props[name] = evaluate(this.props[name], this.props)
-      }
-      this.props.i = i
-      const strokeWidth = props.strokeWidth
-      const x = props.x
-      const y = props.y
-      ctx.save()
-      if (props.radians) {
-        const rotx = x + props.rotateX
-        const roty = y + props.rotateY
-        ctx.translate(rotx, roty)
-        ctx.rotate(props.radians)
-        ctx.translate(-rotx, -roty)
-      }
-      ctx.scale(props.scaleX, props.scaleY)
-      ctx.fillStyle = 'rgba(' + props.fillRed + ', ' + props.fillGreen + ', ' + props.fillBlue + ', ' + props.fillAlpha + ')'
-      ctx.fillRect(x, y, props.width, props.height)
-      if (strokeWidth) {
-        ctx.strokeStyle = 'rgba(' + props.strokeRed + ', ' + props.strokeGreen + ', ' + props.strokeBlue + ', ' + props.strokeAlpha + ')'
-        ctx.lineWidth = strokeWidth
-        ctx.strokeRect(x, y, props.width, props.height)
-      }
-      ctx.restore()
-    },
-    view () {
-      if (!this.formOpen) return h('div', '')
-      const vars = this.props
-      return h('div', [
-        field(this, 'copies', ['copies'], vars),
-        field(this, 'width', ['width'], vars),
-        field(this, 'height', ['height'], vars),
-        field(this, 'x', ['x'], vars),
-        field(this, 'y', ['y'], vars),
-        field(this, 'fill red', ['fillRed'], vars),
-        field(this, 'fill green', ['fillGreen'], vars),
-        field(this, 'fill blue', ['fillBlue'], vars),
-        field(this, 'fill alpha', ['fillAlpha'], vars),
-        field(this, 'stroke red', ['fillAlpha'], vars),
-        field(this, 'stroke green', ['fillAlpha'], vars),
-        field(this, 'stroke blue', ['fillAlpha'], vars),
-        field(this, 'stroke alpha', ['fillAlpha'], vars),
-        field(this, 'stroke width', ['strokeWidth'], vars),
-        field(this, 'radians', ['radians'], vars),
-        field(this, 'origin X', ['originX'], vars),
-        field(this, 'origin Y', ['originY'], vars)
-      ])
-    }
-  })
-}
-
-},{"../utils/evaluate":18,"./field":2,"uzu":17}],2:[function(require,module,exports){
-const { h } = require('uzu')
-const fieldset = require('./fieldset')
-
-module.exports = field
-
-function field (elem, label, prop, vars) {
-  const inputs = h('input.w-100.code.f6.pa1', {
-    props: { type: 'text', value: elem.props[prop] },
-    on: {
-      input: ev => {
-        const val = ev.currentTarget.value
-        elem.props[prop] = val
-      }
-    }
-  })
-  return fieldset([
-    h('label.code', label),
-    h('div', { css: { root: [ 'float: right' ] } }, inputs)
-  ])
-}
-
-},{"./fieldset":3,"uzu":17}],3:[function(require,module,exports){
-const { h } = require('uzu')
-
-module.exports = fieldset
-
-function fieldset (children) {
-  return h('fieldset.bn.pa0.mb2', {
-    css: {
-      root: [
-        'overflow: auto',
-        'border: none',
-        'padding: 0.2rem 0 0.2rem 0'
-      ],
-      ' > label': [
-        'display: inline-block'
-      ],
-      ' input': [
-        'width: 90%',
-        'margin-left: 0.5rem'
-      ],
-      ' > .inputs': [
-      ]
-    }
-  }, children)
-}
-
-},{"uzu":17}],4:[function(require,module,exports){
-const { Component, h } = require('uzu')
-
-// TODO
-// - global constants
-// - cache evaluated formulas as functions
-// - grid of rectangles, evenly spaced x and y
-// - try to remove ctx.save and restore
-// - checkboxes for fill, stroke, etc
-// - general shapes
-// - canvas fill
-// - when creating an elem, repeat props from last elem
-// - ++ keyframes/timed values (start and end with an easing function)
-
-// Components
-const { Rectangle } = require('./components/Rectangle')
-
-// Utils/views
-const newElemButton = require('./utils/newElemButton')
-const fieldset = require('./components/fieldset')
-
-function App () {
-  const canvasState = CanvasState()
-  const canvas = Canvas(canvasState)
-  return Component({
-    canvasState,
-    canvas,
-    view () {
-      return h('div', [
-        this.canvasState.view(),
-        this.canvas.view()
-      ])
-    }
-  })
-}
-
-const start = window.performance.now()
-
-function CanvasState () {
-  return Component({
-    // Dynamic variables for use in properties
-    vars: {
-      canvasWidth: () => 1000,
-      canvasHeight: () => 1000,
-      ts: () => window.performance.now() - start,
-      pi: () => Math.PI,
-      mouseX: () => document._mouseX,
-      mouseY: () => document._mouseY,
-      scrollTop: () => document.scrollTop,
-      windowHeight: () => window.innerHeight,
-      windowWidth: () => window.innerWidth
-    },
-    elems: { },
-    elemOrder: [],
-    view () {
-      const elems = this.elemOrder.map(elem => {
-        return h('div', { key: elem.name }, [
-          h('div.b.pointer.bb.b--black-20.mv1.code.pv1.flex.justify-between', {
-            on: { click: () => { elem.toggleFormOpen() } }
-          }, [
-            elem.name,
-            removeButton(this, elem)
-          ]),
-          elem.view()
-        ])
-      })
-      return h('div.mw5.bg-light-gray.pa2', {
-        css: {
-          root: [
-            'padding: 1rem',
-            'width: 300px',
-            'float: left',
-            'background: #f8f8f8'
-          ]
-        }
-      }, [
-        fieldset([
-          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
-          h('input.code.f6.pa1', {
-            props: { type: 'number', value: this.vars.canvasWidth() },
-            on: {
-              input: ev => {
-                const val = ev.currentTarget.value
-                this.vars.canvasWidth = () => val
-                document._canvas.width = val
-              }
-            }
-          })
-        ]),
-        fieldset([
-          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
-          h('input.code.f6.pa1', {
-            props: { type: 'number', value: this.vars.canvasHeight() },
-            on: {
-              input: ev => {
-                const val = ev.currentTarget.value
-                this.vars.canvasHeight = () => val
-                document._canvas.height = val
-              }
-            }
-          })
-        ]),
-        h('div', [
-          // newElemButton(this, Value, 'value'),
-          newElemButton(this, Rectangle, 'rectangle')
-        ]),
-        h('div', elems)
-      ])
-    }
-  })
-}
-
-/*
-let id = 0
-// TODO
-function Value (canvasState) {
-  return Component({
-    name: 'val-' + id++,
-    value: () => 0,
-    formOpen: true,
-    toggleFormOpen () {
-      this.formOpen = !this.formOpen
-      this._render()
-    },
-    view () {
-      if (!this.formOpen) return h('div', '')
-      return h('div', [
-        field(this, 'value', canvasState)
-      ])
-    }
-  })
-}
-*/
-
-function Canvas (canvasState) {
-  return Component({
-    view () {
-      return h('canvas.fixed.top-0', {
-        style: {
-          left: '16rem'
-        },
-        props: {
-          id: 'tutorial'
-        },
-        hook: {
-          insert: (vnode) => {
-            const elm = vnode.elm
-            elm.width = canvasState.vars.canvasWidth()
-            elm.height = canvasState.vars.canvasHeight()
-            document._canvas = elm
-            const ctx = elm.getContext('2d')
-            ctx.globalCompositeOperation = 'destination-over'
-            window.ctx = ctx
-            ctx.save()
-            function draw (ts) {
-              document._ts = ts
-              ctx.clearRect(0, 0, canvasState.vars.canvasWidth(), canvasState.vars.canvasHeight())
-              for (let name in canvasState.elems) {
-                let shape = canvasState.elems[name]
-                if (shape.draw) shape.draw(ctx)
-              }
-              window.requestAnimationFrame(draw)
-            }
-            draw()
-          }
-        }
-      })
-    }
-  })
-}
-
-function removeButton (app, elem) {
-  return h('button.bg-white.ba.b--black-10.f6', {
-    on: {
-      click: () => {
-        delete app.elems[elem.name]
-        app.elemOrder = app.elemOrder.filter(e => e.name !== elem.name)
-        app._render()
-      }
-    }
-  }, ['Remove'])
-}
-
-// Get the mouse x/y coords globally
-document.body.addEventListener('mousemove', ev => {
-  document._mouseX = ev.clientX
-  document._mouseY = ev.clientY
-})
-
-document.body.appendChild(App().view().elm)
-
-},{"./components/Rectangle":1,"./components/fieldset":3,"./utils/newElemButton":19,"uzu":17}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var vnode_1 = require("./vnode");
@@ -397,7 +58,7 @@ exports.h = h;
 ;
 exports.default = h;
 
-},{"./is":7,"./vnode":16}],6:[function(require,module,exports){
+},{"./is":3,"./vnode":12}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function createElement(tagName) {
@@ -464,7 +125,7 @@ exports.htmlDomApi = {
 };
 exports.default = exports.htmlDomApi;
 
-},{}],7:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.array = Array.isArray;
@@ -473,7 +134,7 @@ function primitive(s) {
 }
 exports.primitive = primitive;
 
-},{}],8:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var xlinkNS = 'http://www.w3.org/1999/xlink';
@@ -529,7 +190,7 @@ function updateAttrs(oldVnode, vnode) {
 exports.attributesModule = { create: updateAttrs, update: updateAttrs };
 exports.default = exports.attributesModule;
 
-},{}],9:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function updateClass(oldVnode, vnode) {
@@ -555,7 +216,7 @@ function updateClass(oldVnode, vnode) {
 exports.classModule = { create: updateClass, update: updateClass };
 exports.default = exports.classModule;
 
-},{}],10:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var CAPS_REGEX = /[A-Z]/g;
@@ -594,7 +255,7 @@ function updateDataset(oldVnode, vnode) {
 exports.datasetModule = { create: updateDataset, update: updateDataset };
 exports.default = exports.datasetModule;
 
-},{}],11:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function invokeHandler(handler, vnode, event) {
@@ -690,7 +351,7 @@ exports.eventListenersModule = {
 };
 exports.default = exports.eventListenersModule;
 
-},{}],12:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function updateProps(oldVnode, vnode) {
@@ -717,7 +378,7 @@ function updateProps(oldVnode, vnode) {
 exports.propsModule = { create: updateProps, update: updateProps };
 exports.default = exports.propsModule;
 
-},{}],13:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // Bindig `requestAnimationFrame` like this fixes a bug in IE/Edge. See #360 and #409.
@@ -814,7 +475,7 @@ exports.styleModule = {
 };
 exports.default = exports.styleModule;
 
-},{}],14:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var vnode_1 = require("./vnode");
@@ -1127,7 +788,7 @@ function init(modules, domApi) {
 }
 exports.init = init;
 
-},{"./h":5,"./htmldomapi":6,"./is":7,"./thunk":15,"./vnode":16}],15:[function(require,module,exports){
+},{"./h":1,"./htmldomapi":2,"./is":3,"./thunk":11,"./vnode":12}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var h_1 = require("./h");
@@ -1175,7 +836,7 @@ exports.thunk = function thunk(sel, key, fn, args) {
 };
 exports.default = exports.thunk;
 
-},{"./h":5}],16:[function(require,module,exports){
+},{"./h":1}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function vnode(sel, data, children, text, elm) {
@@ -1186,7 +847,7 @@ function vnode(sel, data, children, text, elm) {
 exports.vnode = vnode;
 exports.default = vnode;
 
-},{}],17:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 // Use all useful snabbdom modules
 const patch = require('snabbdom').init([
   require('snabbdom/modules/props').default,
@@ -1221,7 +882,346 @@ function Component (obj) {
   return obj
 }
 
-},{"snabbdom":14,"snabbdom/h":5,"snabbdom/modules/attributes":8,"snabbdom/modules/class":9,"snabbdom/modules/dataset":10,"snabbdom/modules/eventlisteners":11,"snabbdom/modules/props":12,"snabbdom/modules/style":13}],18:[function(require,module,exports){
+},{"snabbdom":10,"snabbdom/h":1,"snabbdom/modules/attributes":4,"snabbdom/modules/class":5,"snabbdom/modules/dataset":6,"snabbdom/modules/eventlisteners":7,"snabbdom/modules/props":8,"snabbdom/modules/style":9}],14:[function(require,module,exports){
+const { Component, h } = require('uzu')
+
+const field = require('./field')
+const evaluate = require('../utils/evaluate')
+
+module.exports = { Rectangle }
+
+let id = 0
+
+const start = window.performance.now()
+
+function Rectangle (canvasState) {
+  return Component({
+    name: 'rect-' + id++,
+    props: {
+      ts: () => window.performance.now() - start,
+      copies: 1,
+      x: 50,
+      y: 50,
+      width: 50,
+      height: 50,
+      fillRed: 0,
+      fillGreen: 0,
+      fillBlue: 100,
+      fillAlpha: 0.5,
+      strokeRed: 0,
+      strokeGreen: 0,
+      strokeBlue: 0,
+      strokeAlpha: 1,
+      strokeWidth: 0,
+      radians: 0,
+      rotateX: 0,
+      rotateY: 0,
+      scaleX: 1,
+      scaleY: 1
+    },
+    formOpen: true,
+    toggleFormOpen () {
+      this.formOpen = !this.formOpen
+      this._render()
+    },
+    draw (ctx) {
+      for (let i = 0; i < this.props.copies; i++) {
+        this.drawOne(ctx, i)
+      }
+    },
+    drawOne (ctx, i) {
+      let props = {}
+      for (let name in this.props) {
+        props[name] = evaluate(this.props[name], this.props)
+      }
+      this.props.i = i
+      const strokeWidth = props.strokeWidth
+      const x = props.x
+      const y = props.y
+      ctx.save()
+      if (props.radians) {
+        const rotx = x + props.rotateX
+        const roty = y + props.rotateY
+        ctx.translate(rotx, roty)
+        ctx.rotate(props.radians)
+        ctx.translate(-rotx, -roty)
+      }
+      ctx.scale(props.scaleX, props.scaleY)
+      ctx.fillStyle = 'rgba(' + props.fillRed + ', ' + props.fillGreen + ', ' + props.fillBlue + ', ' + props.fillAlpha + ')'
+      ctx.fillRect(x, y, props.width, props.height)
+      if (strokeWidth) {
+        ctx.strokeStyle = 'rgba(' + props.strokeRed + ', ' + props.strokeGreen + ', ' + props.strokeBlue + ', ' + props.strokeAlpha + ')'
+        ctx.lineWidth = strokeWidth
+        ctx.strokeRect(x, y, props.width, props.height)
+      }
+      ctx.restore()
+    },
+    view () {
+      if (!this.formOpen) return h('div', '')
+      const vars = this.props
+      return h('div', [
+        field(this, 'copies', ['copies'], vars),
+        field(this, 'width', ['width'], vars),
+        field(this, 'height', ['height'], vars),
+        field(this, 'x', ['x'], vars),
+        field(this, 'y', ['y'], vars),
+        field(this, 'fill red', ['fillRed'], vars),
+        field(this, 'fill green', ['fillGreen'], vars),
+        field(this, 'fill blue', ['fillBlue'], vars),
+        field(this, 'fill alpha', ['fillAlpha'], vars),
+        field(this, 'stroke red', ['fillAlpha'], vars),
+        field(this, 'stroke green', ['fillAlpha'], vars),
+        field(this, 'stroke blue', ['fillAlpha'], vars),
+        field(this, 'stroke alpha', ['fillAlpha'], vars),
+        field(this, 'stroke width', ['strokeWidth'], vars),
+        field(this, 'radians', ['radians'], vars),
+        field(this, 'origin X', ['originX'], vars),
+        field(this, 'origin Y', ['originY'], vars)
+      ])
+    }
+  })
+}
+
+},{"../utils/evaluate":18,"./field":15,"uzu":13}],15:[function(require,module,exports){
+const { h } = require('uzu')
+const fieldset = require('./fieldset')
+
+module.exports = field
+
+function field (elem, label, prop, vars) {
+  const inputs = h('input.w-100.code.f6.pa1', {
+    props: { type: 'text', value: elem.props[prop] },
+    on: {
+      input: ev => {
+        const val = ev.currentTarget.value
+        elem.props[prop] = val
+      }
+    }
+  })
+  return fieldset([
+    h('label.code', label),
+    h('div', { css: { root: [ 'float: right' ] } }, inputs)
+  ])
+}
+
+},{"./fieldset":16,"uzu":13}],16:[function(require,module,exports){
+const { h } = require('uzu')
+
+module.exports = fieldset
+
+function fieldset (children) {
+  return h('fieldset.bn.pa0.mb2', {
+    css: {
+      root: [
+        'overflow: auto',
+        'border: none',
+        'padding: 0.2rem 0 0.2rem 0'
+      ],
+      ' > label': [
+        'display: inline-block'
+      ],
+      ' input': [
+        'width: 90%',
+        'margin-left: 0.5rem'
+      ],
+      ' > .inputs': [
+      ]
+    }
+  }, children)
+}
+
+},{"uzu":13}],17:[function(require,module,exports){
+const { Component, h } = require('uzu')
+
+// TODO
+// - global constants
+// - cache evaluated formulas as functions
+// - grid of rectangles, evenly spaced x and y
+// - try to remove ctx.save and restore
+// - checkboxes for fill, stroke, etc
+// - general shapes
+// - canvas fill
+// - when creating an elem, repeat props from last elem
+// - ++ keyframes/timed values (start and end with an easing function)
+
+// Components
+const { Rectangle } = require('./components/Rectangle')
+
+// Utils/views
+const newElemButton = require('./utils/newElemButton')
+const fieldset = require('./components/fieldset')
+
+function App () {
+  const canvasState = CanvasState()
+  const canvas = Canvas(canvasState)
+  return Component({
+    canvasState,
+    canvas,
+    view () {
+      return h('div', [
+        this.canvasState.view(),
+        this.canvas.view()
+      ])
+    }
+  })
+}
+
+const start = window.performance.now()
+
+function CanvasState () {
+  return Component({
+    // Dynamic variables for use in properties
+    vars: {
+      canvasWidth: () => 1000,
+      canvasHeight: () => 1000,
+      ts: () => window.performance.now() - start,
+      pi: () => Math.PI,
+      mouseX: () => document._mouseX,
+      mouseY: () => document._mouseY,
+      scrollTop: () => document.scrollTop,
+      windowHeight: () => window.innerHeight,
+      windowWidth: () => window.innerWidth
+    },
+    elems: { },
+    elemOrder: [],
+    view () {
+      const elems = this.elemOrder.map(elem => {
+        return h('div', { key: elem.name }, [
+          h('div.b.pointer.bb.b--black-20.mv1.code.pv1.flex.justify-between', {
+            on: { click: () => { elem.toggleFormOpen() } }
+          }, [
+            elem.name,
+            removeButton(this, elem)
+          ]),
+          elem.view()
+        ])
+      })
+      return h('div.mw5.bg-light-gray.pa2', {
+        css: {
+          root: [
+            'padding: 1rem',
+            'width: 300px',
+            'float: left',
+            'background: #f8f8f8'
+          ]
+        }
+      }, [
+        fieldset([
+          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
+          h('input.code.f6.pa1', {
+            props: { type: 'number', value: this.vars.canvasWidth() },
+            on: {
+              input: ev => {
+                const val = ev.currentTarget.value
+                this.vars.canvasWidth = () => val
+                document._canvas.width = val
+              }
+            }
+          })
+        ]),
+        fieldset([
+          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
+          h('input.code.f6.pa1', {
+            props: { type: 'number', value: this.vars.canvasHeight() },
+            on: {
+              input: ev => {
+                const val = ev.currentTarget.value
+                this.vars.canvasHeight = () => val
+                document._canvas.height = val
+              }
+            }
+          })
+        ]),
+        h('div', [
+          // newElemButton(this, Value, 'value'),
+          newElemButton(this, Rectangle, 'rectangle')
+        ]),
+        h('div', elems)
+      ])
+    }
+  })
+}
+
+/*
+let id = 0
+// TODO
+function Value (canvasState) {
+  return Component({
+    name: 'val-' + id++,
+    value: () => 0,
+    formOpen: true,
+    toggleFormOpen () {
+      this.formOpen = !this.formOpen
+      this._render()
+    },
+    view () {
+      if (!this.formOpen) return h('div', '')
+      return h('div', [
+        field(this, 'value', canvasState)
+      ])
+    }
+  })
+}
+*/
+
+function Canvas (canvasState) {
+  return Component({
+    view () {
+      return h('canvas.fixed.top-0', {
+        style: {
+          left: '16rem'
+        },
+        props: {
+          id: 'tutorial'
+        },
+        hook: {
+          insert: (vnode) => {
+            const elm = vnode.elm
+            elm.width = canvasState.vars.canvasWidth()
+            elm.height = canvasState.vars.canvasHeight()
+            document._canvas = elm
+            const ctx = elm.getContext('2d')
+            ctx.globalCompositeOperation = 'destination-over'
+            window.ctx = ctx
+            ctx.save()
+            function draw (ts) {
+              document._ts = ts
+              ctx.clearRect(0, 0, canvasState.vars.canvasWidth(), canvasState.vars.canvasHeight())
+              for (let name in canvasState.elems) {
+                let shape = canvasState.elems[name]
+                if (shape.draw) shape.draw(ctx)
+              }
+              window.requestAnimationFrame(draw)
+            }
+            draw()
+          }
+        }
+      })
+    }
+  })
+}
+
+function removeButton (app, elem) {
+  return h('button.bg-white.ba.b--black-10.f6', {
+    on: {
+      click: () => {
+        delete app.elems[elem.name]
+        app.elemOrder = app.elemOrder.filter(e => e.name !== elem.name)
+        app._render()
+      }
+    }
+  }, ['Remove'])
+}
+
+// Get the mouse x/y coords globally
+document.body.addEventListener('mousemove', ev => {
+  document._mouseX = ev.clientX
+  document._mouseY = ev.clientY
+})
+
+document.body.appendChild(App().view().elm)
+
+},{"./components/Rectangle":14,"./components/fieldset":16,"./utils/newElemButton":19,"uzu":13}],18:[function(require,module,exports){
 module.exports = evaluate
 
 // We use `with` and `eval` because it's easy and simple and the security 
@@ -1258,4 +1258,4 @@ function newElemButton (parentCmp, constructor, name) {
   }, ['Add ', name])
 }
 
-},{"uzu":17}]},{},[4]);
+},{"uzu":13}]},{},[17]);

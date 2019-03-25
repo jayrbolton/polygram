@@ -14,6 +14,7 @@ function Rectangle (canvasState) {
     name: 'rect-' + id++,
     props: {
       ts: () => window.performance.now() - start,
+      rand: (max) => Math.floor(Math.random() * Math.floor(max)),
       copies: 1,
       x: 50,
       y: 50,
@@ -90,8 +91,8 @@ function Rectangle (canvasState) {
         field(this, 'stroke alpha', ['fillAlpha'], vars),
         field(this, 'stroke width', ['strokeWidth'], vars),
         field(this, 'radians', ['radians'], vars),
-        field(this, 'origin X', ['originX'], vars),
-        field(this, 'origin Y', ['originY'], vars)
+        field(this, 'origin X', ['rotateX'], vars),
+        field(this, 'origin Y', ['rotateY'], vars)
       ])
     }
   })
