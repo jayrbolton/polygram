@@ -3,15 +3,12 @@ const { Component, h } = require('uzu')
 const button = require('./components/button')
 
 // TODO
+// - ability to save work
 // - global constants
 // - cache evaluated formulas as functions
-// - grid of rectangles, evenly spaced x and y
 // - try to remove ctx.save and restore
-// - checkboxes for fill, stroke, etc
 // - general shapes
 // - canvas fill
-// - when creating an elem, repeat props from last elem
-// - ++ keyframes/timed values (start and end with an easing function)
 
 // Components
 const { Rectangle } = require('./components/Rectangle')
