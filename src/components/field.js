@@ -14,7 +14,7 @@ function field (elem, label, prop, vars) {
     }
   })
   return fieldset([
-    h('label.code', label),
+    h('label.code.dib.mb1', label),
     h('div', { css: { root: [ 'float: right' ] } }, inputs)
   ])
 }

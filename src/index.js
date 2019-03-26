@@ -60,8 +60,10 @@ function CanvasState () {
             h('span.pointer.dib', {
               on: { click: () => elem.toggleFormOpen() }
             }, elem.name),
-            copyButton(this, elem),
-            removeButton(this, elem)
+            h('div', [
+              copyButton(this, elem),
+              removeButton(this, elem)
+            ])
           ]),
           elem.view()
         ])
@@ -78,7 +80,7 @@ function CanvasState () {
       }, [
         fieldset([
           h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
-          h('input.code.f6.pa1', {
+          h('input.code.f6.pa1.w-100', {
             props: { type: 'number', value: this.vars.canvasWidth() },
             on: {
               input: ev => {
@@ -91,7 +93,7 @@ function CanvasState () {
         ]),
         fieldset([
           h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
-          h('input.code.f6.pa1', {
+          h('input.code.f6.pa1.w-100', {
             props: { type: 'number', value: this.vars.canvasHeight() },
             on: {
               input: ev => {
@@ -104,7 +106,7 @@ function CanvasState () {
         ]),
         h('div', [
           // newElemButton(this, Value, 'value'),
-          newElemButton(this, Rectangle, 'rectangle')
+          newElemButton(this, Rectangle, 'shape')
         ]),
         h('div', elems)
       ])
@@ -173,7 +175,7 @@ function Canvas (canvasState) {
 
 // Takes the full app component, plus a single element (like a Rectangle)
 function removeButton (app, elem) {
-  return h('button.bg-white.ba.b--black-10.f6', {
+  return h('button.bg-white.ba.b--black-10.f6.ml1', {
     on: {
       click: () => {
         delete app.elems[elem.name]
@@ -189,7 +191,9 @@ function copyButton (canvasState, elem) {
   return button('Copy', () => {
     const newElem = Rectangle(canvasState)
     const props = Object.create(elem.props)
+    const flags = Object.create(elem.flags)
     newElem.props = props
+    newElem.flags = flags
     canvasState.elems[newElem.name] = newElem
     canvasState.elemOrder.push(newElem)
     canvasState._render()

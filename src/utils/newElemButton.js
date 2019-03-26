@@ -3,7 +3,7 @@ const { h } = require('uzu')
 module.exports = newElemButton
 
 function newElemButton (parentCmp, constructor, name) {
-  return h('button.bg-white.ba.code.pa2.pointer.mb3', {
+  return h('button.bg-white.ba.code.pa2.pointer.mb3.f6', {
     on: {
       click: () => {
         const cmp = constructor(parentCmp)
