@@ -2,8 +2,6 @@ const { Component, h } = require('uzu')
 
 const field = require('./field')
 const evaluate = require('../utils/evaluate')
-const ease = require('ease-component')
-window.ease = ease
 
 module.exports = { Rectangle }
 
@@ -19,10 +17,15 @@ function Rectangle (canvasState) {
       hasRotation: false,
       hasStroke: false
     },
-    props: {
+    utils: {
+      sin: Math.sin,
+      pi: Math.PI,
+      mouseX: () => document._mouseX,
+      mouseY: () => document._mouseY,
       ts: () => window.performance.now() - start,
-      rand: (max) => Math.floor(Math.random() * Math.floor(max)),
-      ease: (max) => ease.inOutQuart(window.performance.now() % max),
+      rand: (max) => Math.floor(Math.random() * Math.floor(max))
+    },
+    props: {
       copies: 1,
       x: 50,
       y: 50,
@@ -55,8 +58,9 @@ function Rectangle (canvasState) {
     },
     drawOne (ctx, i) {
       let props = {}
+      const defs = Object.assign(this.utils, this.props)
       for (let name in this.props) {
-        props[name] = evaluate(this.props[name], this.props)
+        props[name] = evaluate(this.props[name], defs)
       }
       this.props.i = i
       const x = props.x

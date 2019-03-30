@@ -1,5 +1,6 @@
 const { Component, h } = require('uzu')
 
+const { Modal } = require('./components/Modal')
 const button = require('./components/button')
 
 // TODO
@@ -14,7 +15,6 @@ const button = require('./components/button')
 const { Rectangle } = require('./components/Rectangle')
 
 // Utils/views
-const newElemButton = require('./utils/newElemButton')
 const fieldset = require('./components/fieldset')
 
 function App () {
@@ -32,25 +32,17 @@ function App () {
   })
 }
 
-const start = window.performance.now()
-
 function CanvasState () {
   return Component({
     // Dynamic variables for use in properties
-    vars: {
-      canvasWidth: () => 1000,
-      canvasHeight: () => 1000,
-      ts: () => window.performance.now() - start,
-      pi: () => Math.PI,
-      mouseX: () => document._mouseX,
-      mouseY: () => document._mouseY,
-      scrollTop: () => document.scrollTop,
-      windowHeight: () => window.innerHeight,
-      windowWidth: () => window.innerWidth
-    },
-    elems: { },
+    canvasWidth: 1000,
+    canvasHeight: 1000,
+    elems: {},
     elemOrder: [],
+    savedModal: Modal(),
+    openModal: Modal(),
     view () {
+      console.log(2, this.jsonState)
       const elems = this.elemOrder.map(elem => {
         return h('div', { key: elem.name }, [
           h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between', [
@@ -65,24 +57,59 @@ function CanvasState () {
           elem.view()
         ])
       })
-      return h('div.mw5.bg-light-gray.pa2', {
-        css: {
-          root: [
-            'padding: 1rem',
-            'width: 300px',
-            'float: left',
-            'background: #f8f8f8'
-          ]
+      return h('div.bg-light-gray.pa2', {
+        style: {
+          width: '20rem'
         }
       }, [
+        this.openModal.view({
+          title: 'Open',
+          content: h('div', [
+            h('form', {
+              on: {
+                submit: ev => {
+                  ev.preventDefault()
+                  const jsonState = ev.currentTarget.querySelector('textarea').value
+                  this.openModal.close()
+                  restore(jsonState, this)
+                }
+              }
+            }, [
+              h('textarea.w-100', {
+                props: { rows: 4 }
+              }),
+              button('Load')
+            ])
+          ])
+        }),
+        this.savedModal.view({
+          title: 'Saved!',
+          content: h('div', [
+            h('p', [
+              'Drawing state:',
+              h('div', [
+                h('textarea.w-100', {
+                  props: {
+                    value: this.jsonState,
+                    rows: 4
+                  }
+                })
+              ])
+            ])
+          ])
+        }),
+        h('div.flex.justify-end', [
+          saveButton(this),
+          openButton(this)
+        ]),
         fieldset([
           h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
           h('input.code.f6.pa1.w-100', {
-            props: { type: 'number', value: this.vars.canvasWidth() },
+            props: { type: 'number', value: this.canvasWidth },
             on: {
               input: ev => {
                 const val = ev.currentTarget.value
-                this.vars.canvasWidth = () => val
+                this.canvasWidth = val
                 document._canvas.width = val
               }
             }
@@ -91,11 +118,11 @@ function CanvasState () {
         fieldset([
           h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
           h('input.code.f6.pa1.w-100', {
-            props: { type: 'number', value: this.vars.canvasHeight() },
+            props: { type: 'number', value: this.canvasHeight },
             on: {
               input: ev => {
                 const val = ev.currentTarget.value
-                this.vars.canvasHeight = () => val
+                this.canvasHeight = val
                 document._canvas.height = val
               }
             }
@@ -138,7 +165,7 @@ function Canvas (canvasState) {
     view () {
       return h('canvas.fixed.top-0', {
         style: {
-          left: '16rem'
+          left: '20rem'
         },
         props: {
           id: 'tutorial'
@@ -146,8 +173,8 @@ function Canvas (canvasState) {
         hook: {
           insert: (vnode) => {
             const elm = vnode.elm
-            elm.width = canvasState.vars.canvasWidth()
-            elm.height = canvasState.vars.canvasHeight()
+            elm.width = canvasState.canvasWidth
+            elm.height = canvasState.canvasHeight
             document._canvas = elm
             const ctx = elm.getContext('2d')
             ctx.globalCompositeOperation = 'destination-over'
@@ -155,7 +182,7 @@ function Canvas (canvasState) {
             ctx.save()
             function draw (ts) {
               document._ts = ts
-              ctx.clearRect(0, 0, canvasState.vars.canvasWidth(), canvasState.vars.canvasHeight())
+              ctx.clearRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
               for (let name in canvasState.elems) {
                 let shape = canvasState.elems[name]
                 if (shape.draw) shape.draw(ctx)
@@ -171,16 +198,12 @@ function Canvas (canvasState) {
 }
 
 // Takes the full app component, plus a single element (like a Rectangle)
-function removeButton (app, elem) {
-  return h('button.bg-white.ba.b--black-10.f6.ml1', {
-    on: {
-      click: () => {
-        delete app.elems[elem.name]
-        app.elemOrder = app.elemOrder.filter(e => e.name !== elem.name)
-        app._render()
-      }
-    }
-  }, ['Remove'])
+function removeButton (canvasState, elem) {
+  return button('Remove', () => {
+    delete canvasState.elems[elem.name]
+    canvasState.elemOrder = canvasState.elemOrder.filter(e => e.name !== elem.name)
+    canvasState._render()
+  })
 }
 
 // Takes the full app component, plus a single element (like a Rectangle)
@@ -197,10 +220,75 @@ function copyButton (canvasState, elem) {
   })
 }
 
+// Create a new shape
+function newElemButton (canvasState, constructor, name) {
+  return button('Add ' + name, () => {
+    const cmp = constructor(canvasState)
+    canvasState.elems[cmp.name] = cmp
+    canvasState.elemOrder.push(cmp)
+    canvasState._render()
+  })
+}
+
+// Save the state of the drawing
+function saveButton (canvasState) {
+  return button('Save', () => {
+    canvasState.jsonState = persist(canvasState)
+    canvasState.savedModal.open()
+    canvasState._render()
+    console.log(1, canvasState.jsonState)
+  })
+}
+
+// Open a new drawing
+function openButton (canvasState) {
+  return button('Open', () => {
+    canvasState.openModal.open()
+  })
+}
+
+function persist (canvasState) {
+  const getElem = elem => {
+    return {
+      flags: elem.flags,
+      props: elem.props,
+      name: elem.name
+    }
+  }
+  const elemOrder = canvasState.elemOrder.map(getElem)
+  const json = JSON.stringify({
+    canvasWidth: canvasState.canvasWidth,
+    canvasHeight: canvasState.canvasHeight,
+    elemOrder
+  })
+  return json
+}
+
+function restore (json, canvasState) {
+  const data = JSON.parse(json)
+  canvasState.canvasWidth = data.canvasWidth
+  canvasState.canvasHeight = data.canvasHeight
+  canvasState.elems = {}
+  canvasState.elemOrder = []
+  data.elemOrder.forEach(elemData => {
+    const elem = Rectangle(canvasState)
+    elem.props = elemData.props
+    elem.flags = elemData.flags
+    elem.name = elemData.name
+    canvasState.elems[elem.name] = elem
+    canvasState.elemOrder.push(elem)
+  })
+  canvasState._render()
+}
+
 // Get the mouse x/y coords globally
 document.body.addEventListener('mousemove', ev => {
   document._mouseX = ev.clientX
   document._mouseY = ev.clientY
 })
 
-document.body.appendChild(App().view().elm)
+const app = App()
+document.body.appendChild(app.view().elm)
+
+document._app = app
+document._restore = restore
