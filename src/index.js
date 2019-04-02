@@ -42,7 +42,6 @@ function CanvasState () {
     savedModal: Modal(),
     openModal: Modal(),
     view () {
-      console.log(2, this.jsonState)
       const elems = this.elemOrder.map(elem => {
         return h('div', { key: elem.name }, [
           h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between', [
@@ -236,7 +235,6 @@ function saveButton (canvasState) {
     canvasState.jsonState = persist(canvasState)
     canvasState.savedModal.open()
     canvasState._render()
-    console.log(1, canvasState.jsonState)
   })
 }
 
@@ -261,6 +259,7 @@ function persist (canvasState) {
     canvasHeight: canvasState.canvasHeight,
     elemOrder
   })
+  localStorage.setItem('canvas-state', json)
   return json
 }
 
@@ -288,7 +287,15 @@ document.body.addEventListener('mousemove', ev => {
 })
 
 const app = App()
-document.body.appendChild(app.view().elm)
 
-document._app = app
-document._restore = restore
+const initialState = localStorage.getItem('canvas-state')
+if (initialState) {
+  try {
+    restore(initialState, app.canvasState)
+  } catch (e) {
+    console.error('Unable to restore localstorage state:', e)
+    localStorage.removeItem('canvas-state')
+  }
+}
+
+document.body.appendChild(app.view().elm)
