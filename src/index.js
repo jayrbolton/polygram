@@ -1,4 +1,5 @@
 const { Component, h } = require('uzu')
+const lzma = require('./lzma').LZMA()
 
 const { Modal } = require('./components/Modal')
 const button = require('./components/button')
@@ -41,6 +42,9 @@ function CanvasState () {
     elemOrder: [],
     savedModal: Modal(),
     openModal: Modal(),
+    compressedState: {
+      loading: false
+    },
     view () {
       const elems = this.elemOrder.map(elem => {
         return h('div', { key: elem.name }, [
@@ -68,12 +72,13 @@ function CanvasState () {
               on: {
                 submit: ev => {
                   ev.preventDefault()
-                  const jsonState = ev.currentTarget.querySelector('textarea').value
-                  this.openModal.close()
-                  restore(jsonState, this)
+                  const link = ev.currentTarget.querySelector('textarea').value
+                  const compressed = link.match(/#(.+)$/)[1]
+                  restoreCompressed(compressed, this)
                 }
               }
             }, [
+              h('p', 'Paste a polygram link:'),
               h('textarea.w-100', {
                 props: { rows: 4 }
               }),
@@ -82,20 +87,18 @@ function CanvasState () {
           ])
         }),
         this.savedModal.view({
-          title: 'Saved!',
-          content: h('div', [
-            h('p', [
-              'Drawing state:',
-              h('div', [
+          title: 'Save Polygram',
+          content: this.compressedState.loading
+            ? h('div', [h('p', 'Loading...')])
+            : h('div', [
+                h('p', 'Link for this polygram:'),
                 h('textarea.w-100', {
                   props: {
-                    value: this.jsonState,
+                    value: this.compressedState.content,
                     rows: 4
                   }
                 })
               ])
-            ])
-          ])
         }),
         h('div.flex.justify-end', [
           saveButton(this),
@@ -182,6 +185,7 @@ function Canvas (canvasState) {
             function draw (ts) {
               document._ts = ts
               ctx.clearRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
+              ctx.fillStyle = 'black'
               for (let name in canvasState.elems) {
                 let shape = canvasState.elems[name]
                 if (shape.draw) shape.draw(ctx)
@@ -235,6 +239,7 @@ function saveButton (canvasState) {
     canvasState.jsonState = persist(canvasState)
     canvasState.savedModal.open()
     canvasState._render()
+    persistCompressed(canvasState.jsonState, canvasState)
   })
 }
 
@@ -246,6 +251,7 @@ function openButton (canvasState) {
 }
 
 function persist (canvasState) {
+  canvasState.compressedState.loading = true
   const getElem = elem => {
     return {
       flags: elem.flags,
@@ -260,9 +266,22 @@ function persist (canvasState) {
     elemOrder
   })
   localStorage.setItem('canvas-state', json)
+  console.log('compressing..')
   return json
 }
 
+function persistCompressed (json, canvasState) {
+  lzma.compress(json, 2, result => {
+    const str = Buffer.from(result).toString('base64')
+    canvasState.compressedState.loading = false
+    document.location.hash = str
+    canvasState.compressedState.content = window.location.href
+    document.location.hash = ''
+    canvasState._render()
+  })
+}
+
+// Restore from a json string
 function restore (json, canvasState) {
   const data = JSON.parse(json)
   canvasState.canvasWidth = data.canvasWidth
@@ -280,6 +299,14 @@ function restore (json, canvasState) {
   canvasState._render()
 }
 
+// Restore from a lzma-compressed url hash
+function restoreCompressed (compressed, canvasState) {
+  const bytes = Buffer.from(compressed, 'base64')
+  lzma.decompress(bytes, result => {
+    restore(result, canvasState)
+  })
+}
+
 // Get the mouse x/y coords globally
 document.body.addEventListener('mousemove', ev => {
   document._mouseX = ev.clientX
@@ -288,13 +315,21 @@ document.body.addEventListener('mousemove', ev => {
 
 const app = App()
 
-const initialState = localStorage.getItem('canvas-state')
-if (initialState) {
-  try {
-    restore(initialState, app.canvasState)
-  } catch (e) {
-    console.error('Unable to restore localstorage state:', e)
-    localStorage.removeItem('canvas-state')
+if (document.location.hash.length) {
+  // Load from the url hash
+  const compressed = document.location.hash.replace(/^#/, '')
+  restoreCompressed(compressed, app.canvasState)
+  document.location.hash = ''
+} else {
+  // Load from localstorage
+  const initialState = localStorage.getItem('canvas-state')
+  if (initialState) {
+    try {
+      restore(initialState, app.canvasState)
+    } catch (e) {
+      console.error('Unable to restore localstorage state:', e)
+      localStorage.removeItem('canvas-state')
+    }
   }
 }
 
