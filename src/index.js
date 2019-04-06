@@ -7,8 +7,6 @@ const lzma = require('./vendor/lzma').LZMA()
 const { Modal } = require('./components/Modal')
 const { Element } = require('./components/Element')
 const button = require('./components/button')
-
-// Utils/views
 const fieldset = require('./components/fieldset')
 
 function App () {
@@ -28,16 +26,17 @@ function App () {
 
 function CanvasState () {
   return Component({
-    // Dynamic variables for use in properties
     canvasWidth: 1000,
     canvasHeight: 1000,
+    fillStyle: 'white',
+    // Shape elements
     elems: {},
     elemOrder: [],
+    // Share/save and open dialogs
     shareModal: Modal(),
     openModal: Modal(),
-    compressedState: {
-      loading: false
-    },
+    // Compressed state of the canvas state and its elements
+    compressedState: { loading: false },
     // Compress the canvas state with lzma and generate a share link
     shareState () {
       this.shareModal.open()
@@ -51,10 +50,25 @@ function CanvasState () {
         this._render()
       })
     },
+
+    changeCanvasHeight (height) {
+      this.canvasHeight = height
+      this.elm.height = height
+    },
+
+    changeCanvasWidth (width) {
+      this.canvasWidth = width
+      this.elm.width = width
+    },
+
+    changeFillStyle (s) {
+      this.fillStyle = s
+    },
+
     view () {
       const elems = this.elemOrder.map(elem => {
         return h('div', { key: elem.name }, [
-          h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between', [
+          h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between.items-center', [
             h('span.pointer.dib', {
               on: { click: () => elem.toggleFormOpen() }
             }, elem.name),
@@ -100,32 +114,9 @@ function CanvasState () {
           shareButton(this),
           openButton(this)
         ]),
-        fieldset([
-          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
-          h('input.code.f6.pa1.w-100', {
-            props: { type: 'number', value: this.canvasWidth },
-            on: {
-              input: ev => {
-                const val = ev.currentTarget.value
-                this.canvasWidth = val
-                document._canvas.width = val
-              }
-            }
-          })
-        ]),
-        fieldset([
-          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
-          h('input.code.f6.pa1.w-100', {
-            props: { type: 'number', value: this.canvasHeight },
-            on: {
-              input: ev => {
-                const val = ev.currentTarget.value
-                this.canvasHeight = val
-                document._canvas.height = val
-              }
-            }
-          })
-        ]),
+        canvasOptionField(this.canvasWidth, 'canvas width', 'number', w => this.changeCanvasWidth(w)),
+        canvasOptionField(this.canvasHeight, 'canvas height', 'number', h => this.changeCanvasHeight(h)),
+        canvasOptionField(this.fillStyle, 'background color', 'text', fs => this.changeFillStyle(fs)),
         h('div', [
           // newElemButton(this, Value, 'value'),
           newElemButton(this, Element, 'shape')
@@ -134,6 +125,21 @@ function CanvasState () {
       ])
     }
   })
+}
+
+function canvasOptionField (val, label, inputType, onchange) {
+  return fieldset([
+    h('label.code', { css: { root: ['font-family: mono'] } }, label),
+    h('input.code.f6.pa1.w-100', {
+      props: { type: inputType, value: val },
+      on: {
+        input: ev => {
+          const newval = ev.currentTarget.value
+          onchange(newval)
+        }
+      }
+    })
+  ])
 }
 
 function shareModalContent (canvasState) {
@@ -187,17 +193,17 @@ function Canvas (canvasState) {
         hook: {
           insert: (vnode) => {
             const elm = vnode.elm
+            canvasState.elm = elm
             elm.width = canvasState.canvasWidth
             elm.height = canvasState.canvasHeight
-            document._canvas = elm
             const ctx = elm.getContext('2d')
-            ctx.globalCompositeOperation = 'destination-over'
+            ctx.globalCompositeOperation = 'source-over'
             window.ctx = ctx
             ctx.save()
             function draw (ts) {
               document._ts = ts
-              ctx.clearRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
-              ctx.fillStyle = 'black'
+              ctx.fillStyle = canvasState.fillStyle || 'white'
+              ctx.fillRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
               for (let name in canvasState.elems) {
                 let shape = canvasState.elems[name]
                 if (shape.draw) shape.draw(ctx)
@@ -271,6 +277,7 @@ function stateToJson (canvasState) {
   const json = JSON.stringify({
     w: canvasState.canvasWidth,
     h: canvasState.canvasHeight,
+    fs: canvasState.fillStyle,
     es: elemOrder
   })
   return json
@@ -296,6 +303,7 @@ function restoreJson (json, canvasState) {
   const data = JSON.parse(json)
   canvasState.canvasWidth = data.w || data.canvasWidth
   canvasState.canvasHeight = data.h || data.canvasHeight
+  canvasState.fillStyle = data.fs || 'white'
   canvasState.elems = {}
   canvasState.elemOrder = []
   const elems = data.es || data.elemOrder

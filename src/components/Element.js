@@ -138,22 +138,26 @@ function Element (canvasState) {
 function fieldGroup (shape, opts) {
   const { flag, name, children } = opts
   const htmlID = 'field-flag-' + name
-  return h('div.bl.bw2.b--black-20.pl1.pb1.mb2', [
+  const isOpen = shape.flags[flag]
+  return h('div.bl.bw2.pl1.pb1.mb2', {
+    class: {
+      'b--black-20': !isOpen,
+      'b--green': isOpen
+    }
+  }, [
     h('input', {
-      props: { type: 'checkbox', checked: shape.flags[flag], id: htmlID },
+      props: { type: 'checkbox', checked: isOpen, id: htmlID },
       on: {
         change: () => {
           // Toggle field group flag
-          shape.flags[flag] = !shape.flags[flag]
+          shape.flags[flag] = !isOpen
           shape._render()
         }
       }
     }),
     h('label.pointer.code.ml2.b.black-60', { props: { htmlFor: htmlID } }, name),
     h('div.mt2', {
-      props: {
-        hidden: !shape.flags[flag]
-      }
+      props: { hidden: !isOpen }
     }, children)
   ])
 }

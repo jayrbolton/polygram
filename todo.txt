@@ -1,5 +1,4 @@
 - fix bug with multiple shapes
-- canvas bg color
 - try to remove ctx.save and restore
 - ++ allow more shapes than rect
 - browserify with minification and gzipping for prod build
