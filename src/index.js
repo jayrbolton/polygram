@@ -1,19 +1,12 @@
 const { Component, h } = require('uzu')
-const lzma = require('./lzma').LZMA()
 
+// Because lzma is not well setup for browserify/webpack, we inject it into our codebase to make it work.
+const lzma = require('./vendor/lzma').LZMA()
+
+// Components and views
 const { Modal } = require('./components/Modal')
+const { Element } = require('./components/Element')
 const button = require('./components/button')
-
-// TODO
-// - ability to save work
-// - global constants
-// - cache evaluated formulas as functions
-// - try to remove ctx.save and restore
-// - general shapes
-// - canvas fill
-
-// Components
-const { Rectangle } = require('./components/Rectangle')
 
 // Utils/views
 const fieldset = require('./components/fieldset')
@@ -40,10 +33,23 @@ function CanvasState () {
     canvasHeight: 1000,
     elems: {},
     elemOrder: [],
-    savedModal: Modal(),
+    shareModal: Modal(),
     openModal: Modal(),
     compressedState: {
       loading: false
+    },
+    // Compress the canvas state with lzma and generate a share link
+    shareState () {
+      this.shareModal.open()
+      this.compressedState.loading = true
+      this._render()
+      const jsonState = stateToJson(this)
+      persistCompressed(jsonState, result => {
+        this.compressedState.loading = false
+        document.location.hash = result
+        this.compressedState.content = window.location.href
+        this._render()
+      })
     },
     view () {
       const elems = this.elemOrder.map(elem => {
@@ -86,22 +92,12 @@ function CanvasState () {
             ])
           ])
         }),
-        this.savedModal.view({
+        this.shareModal.view({
           title: 'Save Polygram',
-          content: this.compressedState.loading
-            ? h('div', [h('p', 'Loading...')])
-            : h('div', [
-                h('p', 'Link for this polygram:'),
-                h('textarea.w-100', {
-                  props: {
-                    value: this.compressedState.content,
-                    rows: 4
-                  }
-                })
-              ])
+          content: shareModalContent(this)
         }),
         h('div.flex.justify-end', [
-          saveButton(this),
+          shareButton(this),
           openButton(this)
         ]),
         fieldset([
@@ -132,12 +128,28 @@ function CanvasState () {
         ]),
         h('div', [
           // newElemButton(this, Value, 'value'),
-          newElemButton(this, Rectangle, 'shape')
+          newElemButton(this, Element, 'shape')
         ]),
         h('div', elems)
       ])
     }
   })
+}
+
+function shareModalContent (canvasState) {
+  if (canvasState.compressedState.loading) {
+    return h('div', [h('p', 'Loading...')])
+  }
+  return h('div', [
+    h('p', 'Saved!'),
+    h('p', 'Link for this polygram:'),
+    h('textarea.w-100', {
+      props: {
+        value: canvasState.compressedState.content,
+        rows: 6
+      }
+    })
+  ])
 }
 
 /*
@@ -200,7 +212,7 @@ function Canvas (canvasState) {
   })
 }
 
-// Takes the full app component, plus a single element (like a Rectangle)
+// Takes the full app component, plus a single element
 function removeButton (canvasState, elem) {
   return button('Remove', () => {
     delete canvasState.elems[elem.name]
@@ -209,10 +221,10 @@ function removeButton (canvasState, elem) {
   })
 }
 
-// Takes the full app component, plus a single element (like a Rectangle)
+// Takes the full app component, plus a single element
 function copyButton (canvasState, elem) {
   return button('Copy', () => {
-    const newElem = Rectangle(canvasState)
+    const newElem = Element(canvasState)
     const props = Object.create(elem.props)
     const flags = Object.create(elem.flags)
     newElem.props = props
@@ -234,13 +246,8 @@ function newElemButton (canvasState, constructor, name) {
 }
 
 // Save the state of the drawing
-function saveButton (canvasState) {
-  return button('Save', () => {
-    canvasState.jsonState = persist(canvasState)
-    canvasState.savedModal.open()
-    canvasState._render()
-    persistCompressed(canvasState.jsonState, canvasState)
-  })
+function shareButton (canvasState) {
+  return button('Share/save', () => canvasState.shareState())
 }
 
 // Open a new drawing
@@ -250,49 +257,53 @@ function openButton (canvasState) {
   })
 }
 
-function persist (canvasState) {
-  canvasState.compressedState.loading = true
+// Convert the canvas state to json text
+function stateToJson (canvasState) {
+  // mini function to get the properties of one "shape" element
   const getElem = elem => {
     return {
-      flags: elem.flags,
-      props: elem.props,
-      name: elem.name
+      f: elem.flags,
+      p: elem.props,
+      n: elem.name
     }
   }
   const elemOrder = canvasState.elemOrder.map(getElem)
   const json = JSON.stringify({
-    canvasWidth: canvasState.canvasWidth,
-    canvasHeight: canvasState.canvasHeight,
-    elemOrder
+    w: canvasState.canvasWidth,
+    h: canvasState.canvasHeight,
+    es: elemOrder
   })
-  localStorage.setItem('canvas-state', json)
-  console.log('compressing..')
   return json
 }
 
-function persistCompressed (json, canvasState) {
+function persistCompressed (json, cb) {
   lzma.compress(json, 2, result => {
     const str = Buffer.from(result).toString('base64')
-    canvasState.compressedState.loading = false
-    document.location.hash = str
-    canvasState.compressedState.content = window.location.href
-    document.location.hash = ''
-    canvasState._render()
+    cb(str)
   })
 }
 
 // Restore from a json string
-function restore (json, canvasState) {
+function restoreJson (json, canvasState) {
+  // The state will be minified where the keys are:
+  // - 'h' is canvasHeight
+  // - 'w' is canvasWidth
+  // - 'es' is the elemOrder
+  // For each element, we have properties for:
+  // - 'p' is props
+  // - 'f' is flags
+  // - 'n' is name
   const data = JSON.parse(json)
-  canvasState.canvasWidth = data.canvasWidth
-  canvasState.canvasHeight = data.canvasHeight
+  canvasState.canvasWidth = data.w || data.canvasWidth
+  canvasState.canvasHeight = data.h || data.canvasHeight
   canvasState.elems = {}
   canvasState.elemOrder = []
-  data.elemOrder.forEach(elemData => {
-    const elem = Rectangle(canvasState)
-    elem.props = elemData.props
-    elem.flags = elemData.flags
-    elem.name = elemData.name
+  const elems = data.es || data.elemOrder
+  elems.forEach(elemData => {
+    const elem = Element(canvasState)
+    elem.props = elemData.p || elemData.props
+    elem.flags = elemData.f || elemData.flags
+    elem.name = elemData.n || elemData.name
     canvasState.elems[elem.name] = elem
     canvasState.elemOrder.push(elem)
   })
@@ -303,7 +314,7 @@ function restore (json, canvasState) {
 function restoreCompressed (compressed, canvasState) {
   const bytes = Buffer.from(compressed, 'base64')
   lzma.decompress(bytes, result => {
-    restore(result, canvasState)
+    restoreJson(result, canvasState)
   })
 }
 
@@ -319,18 +330,6 @@ if (document.location.hash.length) {
   // Load from the url hash
   const compressed = document.location.hash.replace(/^#/, '')
   restoreCompressed(compressed, app.canvasState)
-  document.location.hash = ''
-} else {
-  // Load from localstorage
-  const initialState = localStorage.getItem('canvas-state')
-  if (initialState) {
-    try {
-      restore(initialState, app.canvasState)
-    } catch (e) {
-      console.error('Unable to restore localstorage state:', e)
-      localStorage.removeItem('canvas-state')
-    }
-  }
 }
 
 document.body.appendChild(app.view().elm)

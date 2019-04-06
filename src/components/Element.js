@@ -3,13 +3,14 @@ const { Component, h } = require('uzu')
 const field = require('./field')
 const evaluate = require('../utils/evaluate')
 
-module.exports = { Rectangle }
+module.exports = { Element }
 
 let id = 0
 
 const start = window.performance.now()
 
-function Rectangle (canvasState) {
+// A shape element, to be drawn on the canvas at every frame.
+function Element (canvasState) {
   return Component({
     name: 'rect-' + id++,
     flags: {
@@ -20,6 +21,7 @@ function Rectangle (canvasState) {
     utils: {
       sin: Math.sin,
       pi: Math.PI,
+      floor: Math.floor,
       mouseX: () => document._mouseX,
       mouseY: () => document._mouseY,
       ts: () => window.performance.now() - start,

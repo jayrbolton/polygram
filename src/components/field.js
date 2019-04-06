@@ -1,9 +1,7 @@
 const { h } = require('uzu')
 const fieldset = require('./fieldset')
 
-module.exports = field
-
-function field (elem, label, prop, vars) {
+module.exports = function field (elem, label, prop, vars) {
   const inputs = h('input.w-100.code.f6.pa1', {
     props: { type: 'text', value: elem.props[prop] },
     on: {

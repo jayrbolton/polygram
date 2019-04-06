@@ -1,8 +1,7 @@
 const { h } = require('uzu')
 
-module.exports = fieldset
 
-function fieldset (children) {
+module.exports = function fieldset (children) {
   return h('fieldset.bn.pa0.mb2', {
     css: {
       root: [
