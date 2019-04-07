@@ -234,8 +234,8 @@ function removeButton (canvasState, elem) {
 function copyButton (canvasState, elem) {
   return button('Copy', () => {
     const newElem = Element(canvasState)
-    const props = Object.create(elem.props)
-    const flags = Object.create(elem.flags)
+    const props = Object.assign({}, elem.props)
+    const flags = Object.assign({}, elem.flags)
     newElem.props = props
     newElem.flags = flags
     canvasState.elems[newElem.name] = newElem
