@@ -3,16 +3,16 @@ const { Component, h } = require('uzu')
 const field = require('./field')
 const evaluate = require('../utils/evaluate')
 
-module.exports = { Element }
+module.exports = { Layer }
 
 let id = 0
 
 const start = window.performance.now()
 
-// A shape element, to be drawn on the canvas at every frame.
-function Element (canvasState) {
+// A layer of elements, to be drawn on the canvas at every frame.
+function Layer (canvasState) {
   return Component({
-    name: 'rect-' + id++,
+    name: 'layer-' + id++,
     flags: {
       hasFill: true,
       hasRotation: false,
@@ -77,7 +77,6 @@ function Element (canvasState) {
       this.props.i = i
       const x = props.x
       const y = props.y
-      ctx.save()
       // TODO: if (this.flags.hasRotation)
       if (this.flags.hasRotation) {
         const rotx = x + props.rotateX
@@ -96,7 +95,6 @@ function Element (canvasState) {
         ctx.lineWidth = strokeWidth
         ctx.strokeRect(x, y, props.width, props.height)
       }
-      ctx.restore()
     },
 
     view () {
@@ -146,10 +144,10 @@ function Element (canvasState) {
   })
 }
 
-function fieldGroup (elem, opts) {
+function fieldGroup (layer, opts) {
   const { flag, name, children } = opts
-  const htmlID = 'field-flag-' + elem.name
-  const isOpen = elem.flags[flag]
+  const htmlID = 'field-flag-' + layer.name
+  const isOpen = layer.flags[flag]
   return h('div.bl.bw2.pl1.pb1.mb2', {
     class: {
       'b--black-20': !isOpen,
@@ -158,8 +156,8 @@ function fieldGroup (elem, opts) {
   }, [
     h('input', {
       props: { type: 'checkbox', checked: isOpen, id: htmlID },
-      dataset: { name: elem.name },
-      on: { change: () => elem.toggleFieldGroup(flag) }
+      dataset: { name: layer.name },
+      on: { change: () => layer.toggleFieldGroup(flag) }
     }),
     h('label.pointer.code.ml2.b.black-60', { props: { htmlFor: htmlID } }, name),
     h('div.mt2', {

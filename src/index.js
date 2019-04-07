@@ -5,7 +5,7 @@ const lzma = require('./vendor/lzma').LZMA()
 
 // Components and views
 const { Modal } = require('./components/Modal')
-const { Element } = require('./components/Element')
+const { Layer } = require('./components/Layer')
 const button = require('./components/button')
 const fieldset = require('./components/fieldset')
 
@@ -32,8 +32,8 @@ function CanvasState () {
     canvasHeight: 1000,
     fillStyle: 'white',
     // Shape elements
-    elems: {},
-    elemOrder: [],
+    layers: {},
+    layerOrder: [],
     // Share/save and open dialogs
     shareModal: Modal(),
     openModal: Modal(),
@@ -70,7 +70,7 @@ function CanvasState () {
     },
 
     view () {
-      const elems = this.elemOrder.map(elem => {
+      const layers = this.layerOrder.map(elem => {
         return h('div', { key: elem.name }, [
           h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between.items-center', [
             h('span.pointer.dib', {
@@ -104,9 +104,9 @@ function CanvasState () {
         canvasOptionField(this.fillStyle, 'background color', 'text', fs => this.changeFillStyle(fs)),
         h('div', [
           // newElemButton(this, Value, 'value'),
-          newElemButton(this, Element, 'shape')
+          newElemButton(this, Layer, 'shape')
         ]),
-        h('div', elems)
+        h('div', layers)
       ])
     }
   })
@@ -207,8 +207,8 @@ function Canvas (canvasState) {
               document._ts = ts
               ctx.fillStyle = canvasState.fillStyle || 'white'
               ctx.fillRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
-              for (let name in canvasState.elems) {
-                let shape = canvasState.elems[name]
+              for (let name in canvasState.layers) {
+                let shape = canvasState.layers[name]
                 if (shape.draw) shape.draw(ctx)
               }
               window.requestAnimationFrame(draw)
@@ -224,8 +224,8 @@ function Canvas (canvasState) {
 // Takes the full app component, plus a single element
 function removeButton (canvasState, elem) {
   return button('Remove', () => {
-    delete canvasState.elems[elem.name]
-    canvasState.elemOrder = canvasState.elemOrder.filter(e => e.name !== elem.name)
+    delete canvasState.layers[elem.name]
+    canvasState.layerOrder = canvasState.layerOrder.filter(e => e.name !== elem.name)
     canvasState._render()
   })
 }
@@ -233,13 +233,13 @@ function removeButton (canvasState, elem) {
 // Takes the full app component, plus a single element
 function copyButton (canvasState, elem) {
   return button('Copy', () => {
-    const newElem = Element(canvasState)
+    const newElem = Layer(canvasState)
     const props = Object.assign({}, elem.props)
     const flags = Object.assign({}, elem.flags)
     newElem.props = props
     newElem.flags = flags
-    canvasState.elems[newElem.name] = newElem
-    canvasState.elemOrder.push(newElem)
+    canvasState.layers[newElem.name] = newElem
+    canvasState.layerOrder.push(newElem)
     canvasState._render()
   })
 }
@@ -248,15 +248,15 @@ function copyButton (canvasState, elem) {
 function newElemButton (canvasState, constructor, name) {
   return button('Add ' + name, () => {
     const cmp = constructor(canvasState)
-    canvasState.elems[cmp.name] = cmp
-    canvasState.elemOrder.push(cmp)
+    canvasState.layers[cmp.name] = cmp
+    canvasState.layerOrder.push(cmp)
     canvasState._render()
   })
 }
 
 // Save the state of the drawing
 function shareButton (canvasState) {
-  return button('Share/save', () => canvasState.shareState())
+  return button('Share', () => canvasState.shareState())
 }
 
 // Open a new drawing
@@ -276,12 +276,12 @@ function stateToJson (canvasState) {
       n: elem.name
     }
   }
-  const elemOrder = canvasState.elemOrder.map(getElem)
+  const layerOrder = canvasState.layerOrder.map(getElem)
   const json = JSON.stringify({
     w: canvasState.canvasWidth,
     h: canvasState.canvasHeight,
     fs: canvasState.fillStyle,
-    es: elemOrder
+    es: layerOrder
   })
   return json
 }
@@ -299,7 +299,7 @@ function restoreJson (json, canvasState) {
   // - 'h' is canvasHeight
   // - 'w' is canvasWidth
   // - 'fs' is the fillStyle
-  // - 'es' is the elemOrder
+  // - 'es' is the layerOrder
   // For each element, we have properties for:
   // - 'p' is props
   // - 'f' is flags
@@ -308,16 +308,17 @@ function restoreJson (json, canvasState) {
   canvasState.canvasWidth = data.w || data.canvasWidth
   canvasState.canvasHeight = data.h || data.canvasHeight
   canvasState.fillStyle = data.fs || 'white'
-  canvasState.elems = {}
-  canvasState.elemOrder = []
-  const elems = data.es || data.elemOrder
-  elems.forEach(elemData => {
-    const elem = Element(canvasState)
+  canvasState.layers = {}
+  canvasState.layerOrder = []
+  // Falblacks provided for backwards compatibility
+  const layers = data.es || data.elemOrder || data.layerOrder || []
+  layers.forEach(elemData => {
+    const elem = Layer(canvasState)
     elem.props = elemData.p || elemData.props
     elem.flags = elemData.f || elemData.flags
     elem.name = elemData.n || elemData.name
-    canvasState.elems[elem.name] = elem
-    canvasState.elemOrder.push(elem)
+    canvasState.layers[elem.name] = elem
+    canvasState.layerOrder.push(elem)
   })
   canvasState._render()
 }
