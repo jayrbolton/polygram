@@ -49,15 +49,25 @@ function Element (canvasState) {
       scaleY: 1
     },
     formOpen: true,
+
     toggleFormOpen () {
       this.formOpen = !this.formOpen
       this._render()
     },
+
+    toggleFieldGroup (flag) {
+      console.log('toggling', this)
+      // Toggle field group flag
+      this.flags[flag] = !this.flags[flag]
+      this._render()
+    },
+
     draw (ctx) {
       for (let i = 0; i < this.props.copies; i++) {
         this.drawOne(ctx, i)
       }
     },
+
     drawOne (ctx, i) {
       let props = {}
       const defs = Object.assign(this.utils, this.props)
@@ -88,6 +98,7 @@ function Element (canvasState) {
       }
       ctx.restore()
     },
+
     view () {
       if (!this.formOpen) return h('div', '')
       const vars = this.props
@@ -135,10 +146,10 @@ function Element (canvasState) {
   })
 }
 
-function fieldGroup (shape, opts) {
+function fieldGroup (elem, opts) {
   const { flag, name, children } = opts
-  const htmlID = 'field-flag-' + name
-  const isOpen = shape.flags[flag]
+  const htmlID = 'field-flag-' + elem.name
+  const isOpen = elem.flags[flag]
   return h('div.bl.bw2.pl1.pb1.mb2', {
     class: {
       'b--black-20': !isOpen,
@@ -147,13 +158,8 @@ function fieldGroup (shape, opts) {
   }, [
     h('input', {
       props: { type: 'checkbox', checked: isOpen, id: htmlID },
-      on: {
-        change: () => {
-          // Toggle field group flag
-          shape.flags[flag] = !isOpen
-          shape._render()
-        }
-      }
+      dataset: { name: elem.name },
+      on: { change: () => elem.toggleFieldGroup(flag) }
     }),
     h('label.pointer.code.ml2.b.black-60', { props: { htmlFor: htmlID } }, name),
     h('div.mt2', {

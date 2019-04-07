@@ -10,7 +10,9 @@ const button = require('./components/button')
 const fieldset = require('./components/fieldset')
 
 function App () {
+  // State of the drawing, including all the sidebar option fields.
   const canvasState = CanvasState()
+  // The actual canvas element, which wraps the draw() function
   const canvas = Canvas(canvasState)
   return Component({
     canvasState,
@@ -37,6 +39,7 @@ function CanvasState () {
     openModal: Modal(),
     // Compressed state of the canvas state and its elements
     compressedState: { loading: false },
+
     // Compress the canvas state with lzma and generate a share link
     shareState () {
       this.shareModal.open()
@@ -62,6 +65,7 @@ function CanvasState () {
     },
 
     changeFillStyle (s) {
+      // Will update on next frame
       this.fillStyle = s
     },
 
@@ -81,30 +85,11 @@ function CanvasState () {
         ])
       })
       return h('div.bg-light-gray.pa2', {
-        style: {
-          width: '20rem'
-        }
+        style: { width: '20rem' }
       }, [
         this.openModal.view({
           title: 'Open',
-          content: h('div', [
-            h('form', {
-              on: {
-                submit: ev => {
-                  ev.preventDefault()
-                  const link = ev.currentTarget.querySelector('textarea').value
-                  const compressed = link.match(/#(.+)$/)[1]
-                  restoreCompressed(compressed, this)
-                }
-              }
-            }, [
-              h('p', 'Paste a polygram link:'),
-              h('textarea.w-100', {
-                props: { rows: 4 }
-              }),
-              button('Load')
-            ])
-          ])
+          content: openModalContent(this)
         }),
         this.shareModal.view({
           title: 'Save Polygram',
@@ -139,6 +124,25 @@ function canvasOptionField (val, label, inputType, onchange) {
         }
       }
     })
+  ])
+}
+
+function openModalContent (canvasState) {
+  return h('div', [
+    h('form', {
+      on: {
+        submit: ev => {
+          ev.preventDefault()
+          const link = ev.currentTarget.querySelector('textarea').value
+          const compressed = link.match(/#(.+)$/)[1]
+          restoreCompressed(compressed, canvasState)
+        }
+      }
+    }, [
+      h('p', 'Paste a polygram link:'),
+      h('textarea.w-100', { props: { rows: 4 } }),
+      button('Load')
+    ])
   ])
 }
 
@@ -198,7 +202,6 @@ function Canvas (canvasState) {
             elm.height = canvasState.canvasHeight
             const ctx = elm.getContext('2d')
             ctx.globalCompositeOperation = 'source-over'
-            window.ctx = ctx
             ctx.save()
             function draw (ts) {
               document._ts = ts
@@ -295,6 +298,7 @@ function restoreJson (json, canvasState) {
   // The state will be minified where the keys are:
   // - 'h' is canvasHeight
   // - 'w' is canvasWidth
+  // - 'fs' is the fillStyle
   // - 'es' is the elemOrder
   // For each element, we have properties for:
   // - 'p' is props
@@ -326,18 +330,20 @@ function restoreCompressed (compressed, canvasState) {
   })
 }
 
-// Get the mouse x/y coords globally
+// Track the mouse x/y coords globally
 document.body.addEventListener('mousemove', ev => {
   document._mouseX = ev.clientX
   document._mouseY = ev.clientY
 })
 
+// Initialize the top-level component
 const app = App()
 
+// Load a canvas state from the url hash, if present
 if (document.location.hash.length) {
-  // Load from the url hash
   const compressed = document.location.hash.replace(/^#/, '')
   restoreCompressed(compressed, app.canvasState)
 }
 
+// Mount to the page
 document.body.appendChild(app.view().elm)
