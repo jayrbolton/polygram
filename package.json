@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "start": "(cd docs; budo --live --open ../src/index.js:bundle.js)",
-    "build": "browserify src/index.js > docs/bundle.js",
+    "build": "browserify src/index.js -p tinyify -t es2040 > docs/bundle.js",
     "test": "standard src"
   },
   "author": "jayrbolton <jayrbolton@protonmail.com> (http://www.jayrbolton.com)",
@@ -10,7 +10,9 @@
   "devDependencies": {
     "browserify": "^16.2.3",
     "budo": "^11.6.1",
-    "standard": "^12.0.1"
+    "es2040": "^1.2.6",
+    "standard": "^12.0.1",
+    "tinyify": "^2.5.0"
   },
   "dependencies": {
     "lzma": "^2.3.2",

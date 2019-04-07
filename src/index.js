@@ -1,6 +1,6 @@
 const { Component, h } = require('uzu')
 
-// Because lzma is not well setup for browserify/webpack, we inject it into our codebase to make it work.
+// Because lzma is not set up for browserify/webpack, we inject it into our codebase to make it work.
 const lzma = require('./vendor/lzma').LZMA()
 
 // Components and views
@@ -96,15 +96,15 @@ function CanvasState () {
           content: shareModalContent(this)
         }),
         h('div.flex.justify-end', [
-          shareButton(this),
-          openButton(this)
+          button('Share', () => this.shareState()),
+          button('Open', () => this.openModal.open())
         ]),
         canvasOptionField(this.canvasWidth, 'canvas width', 'number', w => this.changeCanvasWidth(w)),
         canvasOptionField(this.canvasHeight, 'canvas height', 'number', h => this.changeCanvasHeight(h)),
         canvasOptionField(this.fillStyle, 'background color', 'text', fs => this.changeFillStyle(fs)),
         h('div', [
           // newElemButton(this, Value, 'value'),
-          newElemButton(this, Layer, 'shape')
+          newElemButton(this, Layer, 'layer')
         ]),
         h('div', layers)
       ])
@@ -112,6 +112,7 @@ function CanvasState () {
   })
 }
 
+// Field element for canvas width, height, fill, etc
 function canvasOptionField (val, label, inputType, onchange) {
   return fieldset([
     h('label.code', { css: { root: ['font-family: mono'] } }, label),
@@ -127,6 +128,7 @@ function canvasOptionField (val, label, inputType, onchange) {
   ])
 }
 
+// Content in the modal for opening an existing polygram with a link
 function openModalContent (canvasState) {
   return h('div', [
     h('form', {
@@ -146,6 +148,7 @@ function openModalContent (canvasState) {
   ])
 }
 
+// Modal content for sharing the current polygram
 function shareModalContent (canvasState) {
   if (canvasState.compressedState.loading) {
     return h('div', [h('p', 'Loading...')])
@@ -254,18 +257,6 @@ function newElemButton (canvasState, constructor, name) {
   })
 }
 
-// Save the state of the drawing
-function shareButton (canvasState) {
-  return button('Share', () => canvasState.shareState())
-}
-
-// Open a new drawing
-function openButton (canvasState) {
-  return button('Open', () => {
-    canvasState.openModal.open()
-  })
-}
-
 // Convert the canvas state to json text
 function stateToJson (canvasState) {
   // mini function to get the properties of one "shape" element
@@ -314,7 +305,10 @@ function restoreJson (json, canvasState) {
   const layers = data.es || data.elemOrder || data.layerOrder || []
   layers.forEach(elemData => {
     const elem = Layer(canvasState)
-    elem.props = elemData.p || elemData.props
+    const props = elemData.p || elemData.props || {}
+    for (let propName in props) {
+      elem.setProperty(propName, props[propName])
+    }
     elem.flags = elemData.f || elemData.flags
     elem.name = elemData.n || elemData.name
     canvasState.layers[elem.name] = elem

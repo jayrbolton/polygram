@@ -1,32 +1,30 @@
 const { Component, h } = require('uzu')
 
 const field = require('./field')
-const evaluate = require('../utils/evaluate')
 
 module.exports = { Layer }
 
 let id = 0
 
 const start = window.performance.now()
+window.ts = () => window.performance.now() - start
+window.floor = Math.floor
 
 // A layer of elements, to be drawn on the canvas at every frame.
 function Layer (canvasState) {
   return Component({
     name: 'layer-' + id++,
+    formOpen: true,
     flags: {
       hasFill: true,
       hasRotation: false,
       hasStroke: false
     },
-    utils: {
-      sin: Math.sin,
-      pi: Math.PI,
-      floor: Math.floor,
-      mouseX: () => document._mouseX,
-      mouseY: () => document._mouseY,
-      ts: () => window.performance.now() - start,
-      rand: (max) => Math.floor(Math.random() * Math.floor(max))
-    },
+    // Mark which fields are causing errors so we don't re-eval
+    errs: {},
+    // Parsed functions for each property
+    funcs: {},
+    // Input values for each field
     props: {
       copies: 1,
       x: 50,
@@ -48,7 +46,6 @@ function Layer (canvasState) {
       scaleX: 1,
       scaleY: 1
     },
-    formOpen: true,
 
     toggleFormOpen () {
       this.formOpen = !this.formOpen
@@ -56,65 +53,69 @@ function Layer (canvasState) {
     },
 
     toggleFieldGroup (flag) {
-      console.log('toggling', this)
       // Toggle field group flag
       this.flags[flag] = !this.flags[flag]
       this._render()
     },
 
+    // Draw all elements in the layer
     draw (ctx) {
       for (let i = 0; i < this.props.copies; i++) {
         this.drawOne(ctx, i)
       }
     },
 
-    drawOne (ctx, i) {
-      let props = {}
-      const defs = Object.assign(this.utils, this.props)
-      for (let name in this.props) {
-        props[name] = evaluate(this.props[name], defs)
+    // Draw a single element among many copies
+    drawOne (ctx, idx) {
+      let values = {}
+      for (let propName in this.props) {
+        values[propName] = evaluate(this, propName, idx)
       }
-      this.props.i = i
-      const x = props.x
-      const y = props.y
-      // TODO: if (this.flags.hasRotation)
+      const { x, y } = values
       if (this.flags.hasRotation) {
-        const rotx = x + props.rotateX
-        const roty = y + props.rotateY
-        ctx.translate(rotx, roty)
-        ctx.rotate(props.radians)
-        ctx.translate(-rotx, -roty)
+        const { rotateX, rotateY } = values
+        ctx.translate(rotateX, rotateY)
+        ctx.rotate(values.radians)
+        ctx.translate(-rotateX, -rotateY)
       }
       if (this.flags.hasFill) {
-        ctx.fillStyle = 'rgba(' + props.fillRed + ', ' + props.fillGreen + ', ' + props.fillBlue + ', ' + props.fillAlpha + ')'
-        ctx.fillRect(x, y, props.width, props.height)
+        ctx.fillStyle = 'rgba(' + values.fillRed + ', ' + values.fillGreen + ', ' + values.fillBlue + ', ' + values.fillAlpha + ')'
+        ctx.fillRect(x, y, values.width, values.height)
       }
       if (this.flags.hasStroke) {
-        const strokeWidth = props.strokeWidth
-        ctx.strokeStyle = 'rgba(' + props.strokeRed + ', ' + props.strokeGreen + ', ' + props.strokeBlue + ', ' + props.strokeAlpha + ')'
+        const strokeWidth = values.strokeWidth
+        ctx.strokeStyle = 'rgba(' + values.strokeRed + ', ' + values.strokeGreen + ', ' + values.strokeBlue + ', ' + values.strokeAlpha + ')'
         ctx.lineWidth = strokeWidth
-        ctx.strokeRect(x, y, props.width, props.height)
+        ctx.strokeRect(x, y, values.width, values.height)
       }
+    },
+
+    setProperty (propName, value) {
+      this.props[propName] = value
+      this.errs[propName] = false
+      this.funcs[propName] = parseFunc(value, this, propName)
     },
 
     view () {
       if (!this.formOpen) return h('div', '')
-      const vars = this.props
+      const setProp = (propName) => (ev) => {
+        this.setProperty(propName, ev.currentTarget.value)
+      }
       return h('div', [
-        field(this, 'copies', ['copies'], vars),
-        field(this, 'width', ['width'], vars),
-        field(this, 'height', ['height'], vars),
-        field(this, 'x', ['x'], vars),
-        field(this, 'y', ['y'], vars),
+        field({ value: this.props['copies'], label: 'copies', oninput: setProp('copies') }),
+        field({ value: this.props['width'], label: 'width', oninput: setProp('width') }),
+        field({ value: this.props['height'], label: 'height', oninput: setProp('height') }),
+        field({ value: this.props['x'], label: 'x', oninput: setProp('x') }),
+        field({ value: this.props['y'], label: 'y', oninput: setProp('y') }),
         // Fill
         fieldGroup(this, {
           flag: 'hasFill',
           name: 'fill',
           children: [
-            field(this, 'fill red', ['fillRed'], vars),
-            field(this, 'fill green', ['fillGreen'], vars),
-            field(this, 'fill blue', ['fillBlue'], vars),
-            field(this, 'fill alpha', ['fillAlpha'], vars)
+            field({ value: this.props['fillRed'], label: 'fill red', oninput: setProp('fillRed') }),
+            field({ value: this.props['fillBlue'], label: 'fill blue', oninput: setProp('fillBlue') }),
+            field({ value: this.props['fillGreen'], label: 'fill green', oninput: setProp('fillGreen') }),
+            field({ value: this.props['fillAlpha'], label: 'fill alpha', oninput: setProp('fillAlpha') })
           ]
         }),
 
@@ -122,11 +123,11 @@ function Layer (canvasState) {
           flag: 'hasStroke',
           name: 'stroke',
           children: [
-            field(this, 'stroke red', ['fillAlpha'], vars),
-            field(this, 'stroke green', ['fillAlpha'], vars),
-            field(this, 'stroke blue', ['fillAlpha'], vars),
-            field(this, 'stroke alpha', ['fillAlpha'], vars),
-            field(this, 'stroke width', ['strokeWidth'], vars)
+            field({ value: this.props['strokeRed'], label: 'stroke red', oninput: setProp('strokeRed') }),
+            field({ value: this.props['strokeGreen'], label: 'stroke green', oninput: setProp('strokeGreen') }),
+            field({ value: this.props['strokeBlue'], label: 'stroke blue', oninput: setProp('strokeBlue') }),
+            field({ value: this.props['strokeAlpha'], label: 'stroke alpha', oninput: setProp('strokeAlpha') }),
+            field({ value: this.props['strokeWidth'], label: 'stroke width', oninput: setProp('strokeWidth') })
           ]
         }),
 
@@ -134,14 +135,38 @@ function Layer (canvasState) {
           flag: 'hasRotation',
           name: 'rotation',
           children: [
-            field(this, 'radians', ['radians'], vars),
-            field(this, 'origin X', ['rotateX'], vars),
-            field(this, 'origin Y', ['rotateY'], vars)
+            field({ value: this.props['radians'], label: 'radians', oninput: setProp('radians') }),
+            field({ value: this.props['rotateX'], label: 'origin X', oninput: setProp('rotateX') }),
+            field({ value: this.props['rotateY'], label: 'origin Y', oninput: setProp('rotateY') })
           ]
         })
       ])
     }
   })
+}
+
+function parseFunc (str, layer, propName) {
+  try {
+    return Function('i', 'return ' + str) // eslint-disable-line
+  } catch (e) {
+    return function () {}
+  }
+}
+
+function evaluate (layer, propName, idx) {
+  if (propName in layer.funcs) {
+    if (layer.errs[propName]) {
+      return null
+    }
+    try {
+      return layer.funcs[propName](idx)
+    } catch (e) {
+      layer.errs[propName] = true
+      console.error(e)
+    }
+  } else {
+    return layer.props[propName]
+  }
 }
 
 function fieldGroup (layer, opts) {

@@ -1,5 +1,3 @@
 - ++ allow more shapes than rect
-- browserify with minification and gzipping for prod build
-- cache evaluated formulas as js functions to avoid reparsing
 - ++ undo functionality
 - ++ global constants
