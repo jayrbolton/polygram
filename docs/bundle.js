@@ -3166,6 +3166,177 @@ function Component (obj) {
 }
 
 },{"snabbdom":14,"snabbdom/h":5,"snabbdom/modules/attributes":8,"snabbdom/modules/class":9,"snabbdom/modules/dataset":10,"snabbdom/modules/eventlisteners":11,"snabbdom/modules/props":12,"snabbdom/modules/style":13}],19:[function(require,module,exports){
+const { Component, h } = require('uzu')
+
+const field = require('./field')
+const evaluate = require('../utils/evaluate')
+
+module.exports = { Element }
+
+let id = 0
+
+const start = window.performance.now()
+
+// A shape element, to be drawn on the canvas at every frame.
+function Element (canvasState) {
+  return Component({
+    name: 'rect-' + id++,
+    flags: {
+      hasFill: true,
+      hasRotation: false,
+      hasStroke: false
+    },
+    utils: {
+      sin: Math.sin,
+      pi: Math.PI,
+      floor: Math.floor,
+      mouseX: () => document._mouseX,
+      mouseY: () => document._mouseY,
+      ts: () => window.performance.now() - start,
+      rand: (max) => Math.floor(Math.random() * Math.floor(max))
+    },
+    props: {
+      copies: 1,
+      x: 50,
+      y: 50,
+      width: 50,
+      height: 50,
+      fillRed: 0,
+      fillGreen: 0,
+      fillBlue: 100,
+      fillAlpha: 0.5,
+      strokeRed: 0,
+      strokeGreen: 0,
+      strokeBlue: 0,
+      strokeAlpha: 1,
+      strokeWidth: 2,
+      radians: 0,
+      rotateX: 0,
+      rotateY: 0,
+      scaleX: 1,
+      scaleY: 1
+    },
+    formOpen: true,
+
+    toggleFormOpen () {
+      this.formOpen = !this.formOpen
+      this._render()
+    },
+
+    toggleFieldGroup (flag) {
+      console.log('toggling', this)
+      // Toggle field group flag
+      this.flags[flag] = !this.flags[flag]
+      this._render()
+    },
+
+    draw (ctx) {
+      for (let i = 0; i < this.props.copies; i++) {
+        this.drawOne(ctx, i)
+      }
+    },
+
+    drawOne (ctx, i) {
+      let props = {}
+      const defs = Object.assign(this.utils, this.props)
+      for (let name in this.props) {
+        props[name] = evaluate(this.props[name], defs)
+      }
+      this.props.i = i
+      const x = props.x
+      const y = props.y
+      ctx.save()
+      // TODO: if (this.flags.hasRotation)
+      if (this.flags.hasRotation) {
+        const rotx = x + props.rotateX
+        const roty = y + props.rotateY
+        ctx.translate(rotx, roty)
+        ctx.rotate(props.radians)
+        ctx.translate(-rotx, -roty)
+      }
+      if (this.flags.hasFill) {
+        ctx.fillStyle = 'rgba(' + props.fillRed + ', ' + props.fillGreen + ', ' + props.fillBlue + ', ' + props.fillAlpha + ')'
+        ctx.fillRect(x, y, props.width, props.height)
+      }
+      if (this.flags.hasStroke) {
+        const strokeWidth = props.strokeWidth
+        ctx.strokeStyle = 'rgba(' + props.strokeRed + ', ' + props.strokeGreen + ', ' + props.strokeBlue + ', ' + props.strokeAlpha + ')'
+        ctx.lineWidth = strokeWidth
+        ctx.strokeRect(x, y, props.width, props.height)
+      }
+      ctx.restore()
+    },
+
+    view () {
+      if (!this.formOpen) return h('div', '')
+      const vars = this.props
+      return h('div', [
+        field(this, 'copies', ['copies'], vars),
+        field(this, 'width', ['width'], vars),
+        field(this, 'height', ['height'], vars),
+        field(this, 'x', ['x'], vars),
+        field(this, 'y', ['y'], vars),
+        // Fill
+        fieldGroup(this, {
+          flag: 'hasFill',
+          name: 'fill',
+          children: [
+            field(this, 'fill red', ['fillRed'], vars),
+            field(this, 'fill green', ['fillGreen'], vars),
+            field(this, 'fill blue', ['fillBlue'], vars),
+            field(this, 'fill alpha', ['fillAlpha'], vars)
+          ]
+        }),
+
+        fieldGroup(this, {
+          flag: 'hasStroke',
+          name: 'stroke',
+          children: [
+            field(this, 'stroke red', ['fillAlpha'], vars),
+            field(this, 'stroke green', ['fillAlpha'], vars),
+            field(this, 'stroke blue', ['fillAlpha'], vars),
+            field(this, 'stroke alpha', ['fillAlpha'], vars),
+            field(this, 'stroke width', ['strokeWidth'], vars)
+          ]
+        }),
+
+        fieldGroup(this, {
+          flag: 'hasRotation',
+          name: 'rotation',
+          children: [
+            field(this, 'radians', ['radians'], vars),
+            field(this, 'origin X', ['rotateX'], vars),
+            field(this, 'origin Y', ['rotateY'], vars)
+          ]
+        })
+      ])
+    }
+  })
+}
+
+function fieldGroup (elem, opts) {
+  const { flag, name, children } = opts
+  const htmlID = 'field-flag-' + elem.name
+  const isOpen = elem.flags[flag]
+  return h('div.bl.bw2.pl1.pb1.mb2', {
+    class: {
+      'b--black-20': !isOpen,
+      'b--green': isOpen
+    }
+  }, [
+    h('input', {
+      props: { type: 'checkbox', checked: isOpen, id: htmlID },
+      dataset: { name: elem.name },
+      on: { change: () => elem.toggleFieldGroup(flag) }
+    }),
+    h('label.pointer.code.ml2.b.black-60', { props: { htmlFor: htmlID } }, name),
+    h('div.mt2', {
+      props: { hidden: !isOpen }
+    }, children)
+  ])
+}
+
+},{"../utils/evaluate":25,"./field":22,"uzu":18}],20:[function(require,module,exports){
 // simple modal component
 const { Component, h } = require('uzu')
 
@@ -3223,183 +3394,20 @@ function Modal () {
   })
 }
 
-},{"./button":21,"uzu":18}],20:[function(require,module,exports){
-const { Component, h } = require('uzu')
-
-const field = require('./field')
-const evaluate = require('../utils/evaluate')
-
-module.exports = { Rectangle }
-
-let id = 0
-
-const start = window.performance.now()
-
-function Rectangle (canvasState) {
-  return Component({
-    name: 'rect-' + id++,
-    flags: {
-      hasFill: true,
-      hasRotation: false,
-      hasStroke: false
-    },
-    utils: {
-      sin: Math.sin,
-      pi: Math.PI,
-      mouseX: () => document._mouseX,
-      mouseY: () => document._mouseY,
-      ts: () => window.performance.now() - start,
-      rand: (max) => Math.floor(Math.random() * Math.floor(max))
-    },
-    props: {
-      copies: 1,
-      x: 50,
-      y: 50,
-      width: 50,
-      height: 50,
-      fillRed: 0,
-      fillGreen: 0,
-      fillBlue: 100,
-      fillAlpha: 0.5,
-      strokeRed: 0,
-      strokeGreen: 0,
-      strokeBlue: 0,
-      strokeAlpha: 1,
-      strokeWidth: 2,
-      radians: 0,
-      rotateX: 0,
-      rotateY: 0,
-      scaleX: 1,
-      scaleY: 1
-    },
-    formOpen: true,
-    toggleFormOpen () {
-      this.formOpen = !this.formOpen
-      this._render()
-    },
-    draw (ctx) {
-      for (let i = 0; i < this.props.copies; i++) {
-        this.drawOne(ctx, i)
-      }
-    },
-    drawOne (ctx, i) {
-      let props = {}
-      const defs = Object.assign(this.utils, this.props)
-      for (let name in this.props) {
-        props[name] = evaluate(this.props[name], defs)
-      }
-      this.props.i = i
-      const x = props.x
-      const y = props.y
-      ctx.save()
-      // TODO: if (this.flags.hasRotation)
-      if (this.flags.hasRotation) {
-        const rotx = x + props.rotateX
-        const roty = y + props.rotateY
-        ctx.translate(rotx, roty)
-        ctx.rotate(props.radians)
-        ctx.translate(-rotx, -roty)
-      }
-      if (this.flags.hasFill) {
-        ctx.fillStyle = 'rgba(' + props.fillRed + ', ' + props.fillGreen + ', ' + props.fillBlue + ', ' + props.fillAlpha + ')'
-        ctx.fillRect(x, y, props.width, props.height)
-      }
-      if (this.flags.hasStroke) {
-        const strokeWidth = props.strokeWidth
-        ctx.strokeStyle = 'rgba(' + props.strokeRed + ', ' + props.strokeGreen + ', ' + props.strokeBlue + ', ' + props.strokeAlpha + ')'
-        ctx.lineWidth = strokeWidth
-        ctx.strokeRect(x, y, props.width, props.height)
-      }
-      ctx.restore()
-    },
-    view () {
-      if (!this.formOpen) return h('div', '')
-      const vars = this.props
-      return h('div', [
-        field(this, 'copies', ['copies'], vars),
-        field(this, 'width', ['width'], vars),
-        field(this, 'height', ['height'], vars),
-        field(this, 'x', ['x'], vars),
-        field(this, 'y', ['y'], vars),
-        // Fill
-        fieldGroup(this, {
-          flag: 'hasFill',
-          name: 'fill',
-          children: [
-            field(this, 'fill red', ['fillRed'], vars),
-            field(this, 'fill green', ['fillGreen'], vars),
-            field(this, 'fill blue', ['fillBlue'], vars),
-            field(this, 'fill alpha', ['fillAlpha'], vars)
-          ]
-        }),
-
-        fieldGroup(this, {
-          flag: 'hasStroke',
-          name: 'stroke',
-          children: [
-            field(this, 'stroke red', ['fillAlpha'], vars),
-            field(this, 'stroke green', ['fillAlpha'], vars),
-            field(this, 'stroke blue', ['fillAlpha'], vars),
-            field(this, 'stroke alpha', ['fillAlpha'], vars),
-            field(this, 'stroke width', ['strokeWidth'], vars)
-          ]
-        }),
-
-        fieldGroup(this, {
-          flag: 'hasRotation',
-          name: 'rotation',
-          children: [
-            field(this, 'radians', ['radians'], vars),
-            field(this, 'origin X', ['rotateX'], vars),
-            field(this, 'origin Y', ['rotateY'], vars)
-          ]
-        })
-      ])
-    }
-  })
-}
-
-function fieldGroup (shape, opts) {
-  const { flag, name, children } = opts
-  const htmlID = 'field-flag-' + name
-  return h('div.bl.bw2.b--black-20.pl1.pb1.mb2', [
-    h('input', {
-      props: { type: 'checkbox', checked: shape.flags[flag], id: htmlID },
-      on: {
-        change: () => {
-          // Toggle field group flag
-          shape.flags[flag] = !shape.flags[flag]
-          shape._render()
-        }
-      }
-    }),
-    h('label.pointer.code.ml2.b.black-60', { props: { htmlFor: htmlID } }, name),
-    h('div.mt2', {
-      props: {
-        hidden: !shape.flags[flag]
-      }
-    }, children)
-  ])
-}
-
-},{"../utils/evaluate":27,"./field":22,"uzu":18}],21:[function(require,module,exports){
+},{"./button":21,"uzu":18}],21:[function(require,module,exports){
 const { h } = require('uzu')
 
-function button (txt, onclick) {
-  return h('button.bg-white.ba.b--black-10.f6.pointer.dib.code', {
+module.exports = function button (txt, onclick) {
+  return h('button.bg-white.ba.b--black-10.f6.pointer.dib.code.ma1.pa1', {
     on: { click: onclick }
   }, txt)
 }
-
-module.exports = button
 
 },{"uzu":18}],22:[function(require,module,exports){
 const { h } = require('uzu')
 const fieldset = require('./fieldset')
 
-module.exports = field
-
-function field (elem, label, prop, vars) {
+module.exports = function field (elem, label, prop, vars) {
   const inputs = h('input.w-100.code.f6.pa1', {
     props: { type: 'text', value: elem.props[prop] },
     on: {
@@ -3418,53 +3426,27 @@ function field (elem, label, prop, vars) {
 },{"./fieldset":23,"uzu":18}],23:[function(require,module,exports){
 const { h } = require('uzu')
 
-module.exports = fieldset
-
-function fieldset (children) {
-  return h('fieldset.bn.pa0.mb2', {
-    css: {
-      root: [
-        'overflow: auto',
-        'border: none',
-        'padding: 0.2rem 0 0.2rem 0'
-      ],
-      ' > label': [
-        'display: inline-block'
-      ],
-      ' input': [
-        'width: 90%',
-        'margin-left: 0.5rem'
-      ],
-      ' > .inputs': [
-      ]
-    }
-  }, children)
+module.exports = function fieldset (children) {
+  return h('fieldset.bn.pa0.mb2', children)
 }
 
 },{"uzu":18}],24:[function(require,module,exports){
 (function (Buffer){
 const { Component, h } = require('uzu')
-const lzma = require('./lzma').LZMA()
 
+// Because lzma is not well setup for browserify/webpack, we inject it into our codebase to make it work.
+const lzma = require('./vendor/lzma').LZMA()
+
+// Components and views
 const { Modal } = require('./components/Modal')
+const { Element } = require('./components/Element')
 const button = require('./components/button')
-
-// TODO
-// - ability to save work
-// - global constants
-// - cache evaluated formulas as functions
-// - try to remove ctx.save and restore
-// - general shapes
-// - canvas fill
-
-// Components
-const { Rectangle } = require('./components/Rectangle')
-
-// Utils/views
 const fieldset = require('./components/fieldset')
 
 function App () {
+  // State of the drawing, including all the sidebar option fields.
   const canvasState = CanvasState()
+  // The actual canvas element, which wraps the draw() function
   const canvas = Canvas(canvasState)
   return Component({
     canvasState,
@@ -3480,20 +3462,51 @@ function App () {
 
 function CanvasState () {
   return Component({
-    // Dynamic variables for use in properties
     canvasWidth: 1000,
     canvasHeight: 1000,
+    fillStyle: 'white',
+    // Shape elements
     elems: {},
     elemOrder: [],
-    savedModal: Modal(),
+    // Share/save and open dialogs
+    shareModal: Modal(),
     openModal: Modal(),
-    compressedState: {
-      loading: false
+    // Compressed state of the canvas state and its elements
+    compressedState: { loading: false },
+
+    // Compress the canvas state with lzma and generate a share link
+    shareState () {
+      this.shareModal.open()
+      this.compressedState.loading = true
+      this._render()
+      const jsonState = stateToJson(this)
+      persistCompressed(jsonState, result => {
+        this.compressedState.loading = false
+        document.location.hash = result
+        this.compressedState.content = window.location.href
+        this._render()
+      })
     },
+
+    changeCanvasHeight (height) {
+      this.canvasHeight = height
+      this.elm.height = height
+    },
+
+    changeCanvasWidth (width) {
+      this.canvasWidth = width
+      this.elm.width = width
+    },
+
+    changeFillStyle (s) {
+      // Will update on next frame
+      this.fillStyle = s
+    },
+
     view () {
       const elems = this.elemOrder.map(elem => {
         return h('div', { key: elem.name }, [
-          h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between', [
+          h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between.items-center', [
             h('span.pointer.dib', {
               on: { click: () => elem.toggleFormOpen() }
             }, elem.name),
@@ -3506,83 +3519,81 @@ function CanvasState () {
         ])
       })
       return h('div.bg-light-gray.pa2', {
-        style: {
-          width: '20rem'
-        }
+        style: { width: '20rem' }
       }, [
         this.openModal.view({
           title: 'Open',
-          content: h('div', [
-            h('form', {
-              on: {
-                submit: ev => {
-                  ev.preventDefault()
-                  const link = ev.currentTarget.querySelector('textarea').value
-                  const compressed = link.match(/#(.+)$/)[1]
-                  restoreCompressed(compressed, this)
-                }
-              }
-            }, [
-              h('p', 'Paste a polygram link:'),
-              h('textarea.w-100', {
-                props: { rows: 4 }
-              }),
-              button('Load')
-            ])
-          ])
+          content: openModalContent(this)
         }),
-        this.savedModal.view({
+        this.shareModal.view({
           title: 'Save Polygram',
-          content: this.compressedState.loading
-            ? h('div', [h('p', 'Loading...')])
-            : h('div', [
-                h('p', 'Link for this polygram:'),
-                h('textarea.w-100', {
-                  props: {
-                    value: this.compressedState.content,
-                    rows: 4
-                  }
-                })
-              ])
+          content: shareModalContent(this)
         }),
         h('div.flex.justify-end', [
-          saveButton(this),
+          shareButton(this),
           openButton(this)
         ]),
-        fieldset([
-          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-width'),
-          h('input.code.f6.pa1.w-100', {
-            props: { type: 'number', value: this.canvasWidth },
-            on: {
-              input: ev => {
-                const val = ev.currentTarget.value
-                this.canvasWidth = val
-                document._canvas.width = val
-              }
-            }
-          })
-        ]),
-        fieldset([
-          h('label.code', { css: { root: ['font-family: mono'] } }, 'canvas-height'),
-          h('input.code.f6.pa1.w-100', {
-            props: { type: 'number', value: this.canvasHeight },
-            on: {
-              input: ev => {
-                const val = ev.currentTarget.value
-                this.canvasHeight = val
-                document._canvas.height = val
-              }
-            }
-          })
-        ]),
+        canvasOptionField(this.canvasWidth, 'canvas width', 'number', w => this.changeCanvasWidth(w)),
+        canvasOptionField(this.canvasHeight, 'canvas height', 'number', h => this.changeCanvasHeight(h)),
+        canvasOptionField(this.fillStyle, 'background color', 'text', fs => this.changeFillStyle(fs)),
         h('div', [
           // newElemButton(this, Value, 'value'),
-          newElemButton(this, Rectangle, 'shape')
+          newElemButton(this, Element, 'shape')
         ]),
         h('div', elems)
       ])
     }
   })
+}
+
+function canvasOptionField (val, label, inputType, onchange) {
+  return fieldset([
+    h('label.code', { css: { root: ['font-family: mono'] } }, label),
+    h('input.code.f6.pa1.w-100', {
+      props: { type: inputType, value: val },
+      on: {
+        input: ev => {
+          const newval = ev.currentTarget.value
+          onchange(newval)
+        }
+      }
+    })
+  ])
+}
+
+function openModalContent (canvasState) {
+  return h('div', [
+    h('form', {
+      on: {
+        submit: ev => {
+          ev.preventDefault()
+          const link = ev.currentTarget.querySelector('textarea').value
+          const compressed = link.match(/#(.+)$/)[1]
+          restoreCompressed(compressed, canvasState)
+        }
+      }
+    }, [
+      h('p', 'Paste a polygram link:'),
+      h('textarea.w-100', { props: { rows: 4 } }),
+      button('Load')
+    ])
+  ])
+}
+
+function shareModalContent (canvasState) {
+  if (canvasState.compressedState.loading) {
+    return h('div', [h('p', 'Loading...')])
+  }
+  return h('div', [
+    h('p', 'Saved!'),
+    h('p', 'Link for this polygram:'),
+    h('textarea.w-100', {
+      props: {
+        value: canvasState.compressedState.content,
+        rows: 6
+      }
+    })
+  ])
 }
 
 /*
@@ -3620,17 +3631,16 @@ function Canvas (canvasState) {
         hook: {
           insert: (vnode) => {
             const elm = vnode.elm
+            canvasState.elm = elm
             elm.width = canvasState.canvasWidth
             elm.height = canvasState.canvasHeight
-            document._canvas = elm
             const ctx = elm.getContext('2d')
-            ctx.globalCompositeOperation = 'destination-over'
-            window.ctx = ctx
+            ctx.globalCompositeOperation = 'source-over'
             ctx.save()
             function draw (ts) {
               document._ts = ts
-              ctx.clearRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
-              ctx.fillStyle = 'black'
+              ctx.fillStyle = canvasState.fillStyle || 'white'
+              ctx.fillRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
               for (let name in canvasState.elems) {
                 let shape = canvasState.elems[name]
                 if (shape.draw) shape.draw(ctx)
@@ -3645,7 +3655,7 @@ function Canvas (canvasState) {
   })
 }
 
-// Takes the full app component, plus a single element (like a Rectangle)
+// Takes the full app component, plus a single element
 function removeButton (canvasState, elem) {
   return button('Remove', () => {
     delete canvasState.elems[elem.name]
@@ -3654,12 +3664,12 @@ function removeButton (canvasState, elem) {
   })
 }
 
-// Takes the full app component, plus a single element (like a Rectangle)
+// Takes the full app component, plus a single element
 function copyButton (canvasState, elem) {
   return button('Copy', () => {
-    const newElem = Rectangle(canvasState)
-    const props = Object.create(elem.props)
-    const flags = Object.create(elem.flags)
+    const newElem = Element(canvasState)
+    const props = Object.assign({}, elem.props)
+    const flags = Object.assign({}, elem.flags)
     newElem.props = props
     newElem.flags = flags
     canvasState.elems[newElem.name] = newElem
@@ -3679,13 +3689,8 @@ function newElemButton (canvasState, constructor, name) {
 }
 
 // Save the state of the drawing
-function saveButton (canvasState) {
-  return button('Save', () => {
-    canvasState.jsonState = persist(canvasState)
-    canvasState.savedModal.open()
-    canvasState._render()
-    persistCompressed(canvasState.jsonState, canvasState)
-  })
+function shareButton (canvasState) {
+  return button('Share/save', () => canvasState.shareState())
 }
 
 // Open a new drawing
@@ -3695,49 +3700,56 @@ function openButton (canvasState) {
   })
 }
 
-function persist (canvasState) {
-  canvasState.compressedState.loading = true
+// Convert the canvas state to json text
+function stateToJson (canvasState) {
+  // mini function to get the properties of one "shape" element
   const getElem = elem => {
     return {
-      flags: elem.flags,
-      props: elem.props,
-      name: elem.name
+      f: elem.flags,
+      p: elem.props,
+      n: elem.name
     }
   }
   const elemOrder = canvasState.elemOrder.map(getElem)
   const json = JSON.stringify({
-    canvasWidth: canvasState.canvasWidth,
-    canvasHeight: canvasState.canvasHeight,
-    elemOrder
+    w: canvasState.canvasWidth,
+    h: canvasState.canvasHeight,
+    fs: canvasState.fillStyle,
+    es: elemOrder
   })
-  localStorage.setItem('canvas-state', json)
-  console.log('compressing..')
   return json
 }
 
-function persistCompressed (json, canvasState) {
+function persistCompressed (json, cb) {
   lzma.compress(json, 2, result => {
     const str = Buffer.from(result).toString('base64')
-    canvasState.compressedState.loading = false
-    document.location.hash = str
-    canvasState.compressedState.content = window.location.href
-    document.location.hash = ''
-    canvasState._render()
+    cb(str)
   })
 }
 
 // Restore from a json string
-function restore (json, canvasState) {
+function restoreJson (json, canvasState) {
+  // The state will be minified where the keys are:
+  // - 'h' is canvasHeight
+  // - 'w' is canvasWidth
+  // - 'fs' is the fillStyle
+  // - 'es' is the elemOrder
+  // For each element, we have properties for:
+  // - 'p' is props
+  // - 'f' is flags
+  // - 'n' is name
   const data = JSON.parse(json)
-  canvasState.canvasWidth = data.canvasWidth
-  canvasState.canvasHeight = data.canvasHeight
+  canvasState.canvasWidth = data.w || data.canvasWidth
+  canvasState.canvasHeight = data.h || data.canvasHeight
+  canvasState.fillStyle = data.fs || 'white'
   canvasState.elems = {}
   canvasState.elemOrder = []
-  data.elemOrder.forEach(elemData => {
-    const elem = Rectangle(canvasState)
-    elem.props = elemData.props
-    elem.flags = elemData.flags
-    elem.name = elemData.name
+  const elems = data.es || data.elemOrder
+  elems.forEach(elemData => {
+    const elem = Element(canvasState)
+    elem.props = elemData.p || elemData.props
+    elem.flags = elemData.f || elemData.flags
+    elem.name = elemData.n || elemData.name
     canvasState.elems[elem.name] = elem
     canvasState.elemOrder.push(elem)
   })
@@ -3748,40 +3760,49 @@ function restore (json, canvasState) {
 function restoreCompressed (compressed, canvasState) {
   const bytes = Buffer.from(compressed, 'base64')
   lzma.decompress(bytes, result => {
-    restore(result, canvasState)
+    restoreJson(result, canvasState)
   })
 }
 
-// Get the mouse x/y coords globally
+// Track the mouse x/y coords globally
 document.body.addEventListener('mousemove', ev => {
   document._mouseX = ev.clientX
   document._mouseY = ev.clientY
 })
 
+// Initialize the top-level component
 const app = App()
 
+// Load a canvas state from the url hash, if present
 if (document.location.hash.length) {
-  // Load from the url hash
   const compressed = document.location.hash.replace(/^#/, '')
   restoreCompressed(compressed, app.canvasState)
-  document.location.hash = ''
-} else {
-  // Load from localstorage
-  const initialState = localStorage.getItem('canvas-state')
-  if (initialState) {
-    try {
-      restore(initialState, app.canvasState)
-    } catch (e) {
-      console.error('Unable to restore localstorage state:', e)
-      localStorage.removeItem('canvas-state')
-    }
-  }
 }
 
+// Mount to the page
 document.body.appendChild(app.view().elm)
 
 }).call(this,require("buffer").Buffer)
-},{"./components/Modal":19,"./components/Rectangle":20,"./components/button":21,"./components/fieldset":23,"./lzma":25,"buffer":2,"uzu":18}],25:[function(require,module,exports){
+},{"./components/Element":19,"./components/Modal":20,"./components/button":21,"./components/fieldset":23,"./vendor/lzma":26,"buffer":2,"uzu":18}],25:[function(require,module,exports){
+module.exports = evaluate
+
+// We use `with` and `eval` because it's easy and simple and the security 
+// This has security concerns. Eg, if you load someone else's canvas, and they
+// have malicious code in some field, this will just eval..
+// TODO make secure..
+function evaluate (str, vars) {
+  let result
+  with (vars) {
+    try {
+      result = eval(str)
+    } catch (e) { }
+  }
+  return result
+}
+
+window.evaluate = evaluate
+
+},{}],26:[function(require,module,exports){
 //! © 2015 Nathan Rugg <nmrugg@gmail.com> | MIT
 
 var lzma;
@@ -3803,7 +3824,7 @@ module.exports.LZMA = function LZMA()
 module.exports.compress   = lzma.compress;
 module.exports.decompress = lzma.decompress;
 
-},{"./src/lzma_worker.js":26}],26:[function(require,module,exports){
+},{"./src/lzma_worker.js":27}],27:[function(require,module,exports){
 (function (setImmediate){
 /// © 2015 Nathan Rugg <nmrugg@gmail.com> | MIT
 /// See LICENSE for more details.
@@ -6475,23 +6496,4 @@ var LZMA = (function () {
 this.LZMA = this.LZMA_WORKER = LZMA;
 
 }).call(this,require("timers").setImmediate)
-},{"timers":17}],27:[function(require,module,exports){
-module.exports = evaluate
-
-// We use `with` and `eval` because it's easy and simple and the security 
-// This has security concerns. Eg, if you load someone else's canvas, and they
-// have malicious code in some field, this will just eval..
-// TODO make secure..
-function evaluate (str, vars) {
-  let result
-  with (vars) {
-    try {
-      result = eval(str)
-    } catch (e) { }
-  }
-  return result
-}
-
-window.evaluate = evaluate
-
-},{}]},{},[24]);
+},{"timers":17}]},{},[24]);
