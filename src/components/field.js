@@ -7,7 +7,7 @@ module.exports = function field ({ type = 'text', value, oninput, label }) {
     on: { input: oninput }
   })
   return fieldset([
-    h('label.code.dib.mb1', label),
+    h('label.code.dib.mb1', { style: { userSelect: 'none' } }, label),
     h('div', { css: { root: [ 'float: right' ] } }, inp)
   ])
 }

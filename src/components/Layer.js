@@ -15,7 +15,10 @@ function Layer (canvasState) {
   return Component({
     name: 'layer-' + id++,
     id: String(window.performance.now()),
+    // Is the form for this layer collapsed in the sidebar?
     formOpen: true,
+    // Is the user currently renaming this layer?
+    renaming: false,
     flags: {
       hasFill: true,
       hasRotation: false,
@@ -73,22 +76,26 @@ function Layer (canvasState) {
         values[propName] = evaluate(this, propName, idx)
       }
       const { x, y } = values
+      ctx.translate(x, y)
       if (this.flags.hasRotation) {
-        const { rotateX, rotateY } = values
-        ctx.translate(rotateX, rotateY)
+        // ctx.translate(values.rotateX, values.rotateY)
         ctx.rotate(values.radians)
-        ctx.translate(-rotateX, -rotateY)
       }
       if (this.flags.hasFill) {
         ctx.fillStyle = 'rgba(' + values.fillRed + ', ' + values.fillGreen + ', ' + values.fillBlue + ', ' + values.fillAlpha + ')'
-        ctx.fillRect(x, y, values.width, values.height)
+        ctx.fillRect(-values.rotateX || 0, -values.rotateY || 0, values.width, values.height)
       }
       if (this.flags.hasStroke) {
         const strokeWidth = values.strokeWidth
         ctx.strokeStyle = 'rgba(' + values.strokeRed + ', ' + values.strokeGreen + ', ' + values.strokeBlue + ', ' + values.strokeAlpha + ')'
         ctx.lineWidth = strokeWidth
-        ctx.strokeRect(x, y, values.width, values.height)
+        ctx.strokeRect(0, 0, values.width, values.height)
       }
+      if (this.flags.hasRotation) {
+        ctx.rotate(-values.radians)
+        // ctx.translate(-values.rotateX, -values.rotateY)
+      }
+      ctx.translate(-x, -y)
     },
 
     setProperty (propName, value) {
@@ -172,7 +179,7 @@ function evaluate (layer, propName, idx) {
 
 function fieldGroup (layer, opts) {
   const { flag, name, children } = opts
-  const htmlID = 'field-flag-' + layer.name + '-' + flag
+  const htmlID = 'field-flag-' + layer.id + '-' + flag
   const isOpen = layer.flags[flag]
   return h('div.bl.bw2.pl1.pb1.mb2', {
     class: {
@@ -185,7 +192,10 @@ function fieldGroup (layer, opts) {
       dataset: { name: layer.name },
       on: { change: () => layer.toggleFieldGroup(flag) }
     }),
-    h('label.pointer.code.ml2.b.black-60', { props: { htmlFor: htmlID } }, name),
+    h('label.pointer.code.ml2.b.black-60', {
+      props: { htmlFor: htmlID },
+      style: { userSelect: 'none' }
+    }, name),
     h('div.mt2', {
       props: { hidden: !isOpen }
     }, children)

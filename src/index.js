@@ -30,14 +30,15 @@ function CanvasState () {
   return Component({
     canvasWidth: 1000,
     canvasHeight: 1000,
+    sidebarWidth: 400,
     fillStyle: 'white',
-    // Shape elements
+    // Collections of shape elements, both accessed by key and ordered.
     layers: {},
     layerOrder: [],
     // Share/save and open dialogs
     shareModal: Modal(),
     openModal: Modal(),
-    // Compressed state of the canvas state and its elements
+    // Compressed state and all child layers -- populates on "Share"
     compressedState: { loading: false },
     // undo/redo actions
     // array of objects with keys for `forwards` and `backwards`
@@ -74,23 +75,11 @@ function CanvasState () {
       this.fillStyle = s
     },
 
+    // Left sidepanel for controlling the state of the canvas
     view () {
-      const layers = this.layerOrder.map(elem => {
-        return h('div', { key: elem.name }, [
-          h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between.items-center', [
-            h('span.pointer.dib', {
-              on: { click: () => elem.toggleFormOpen() }
-            }, elem.name),
-            h('div', [
-              copyButton(this, elem),
-              removeButton(this, elem)
-            ])
-          ]),
-          elem.view()
-        ])
-      })
-      return h('div.bg-light-gray.pa2', {
-        style: { width: '20rem' }
+      const layers = this.layerOrder.map(layer => layerForm(this, layer))
+      return h('div.bg-light-gray.pv2.pl2.pr3.relative', {
+        style: { width: this.sidebarWidth + 'px' }
       }, [
         this.openModal.view({
           title: 'Open',
@@ -108,15 +97,90 @@ function CanvasState () {
         canvasOptionField(this.canvasHeight, 'canvas height', 'number', h => this.changeCanvasHeight(h)),
         canvasOptionField(this.fillStyle, 'background color', 'text', fs => this.changeFillStyle(fs)),
         h('div', [
-          // newElemButton(this, Value, 'value'),
           newLayerButton(this),
           undoButton(this),
           redoButton(this)
         ]),
-        h('div', layers)
+        h('div', layers),
+        // right-side pull bar
+        h('div', {
+          style: {
+            position: 'absolute',
+            height: '100%',
+            width: '6px',
+            background: 'gray',
+            top: '0px',
+            right: '0px',
+            zIndex: '0',
+            cursor: 'col-resize'
+          },
+          on: {
+            mousedown: () => {
+              const mousemove = ev => {
+                const xPos = ev.clientX
+                if (xPos > 200 && xPos < 1000) {
+                  this.sidebarWidth = xPos
+                  this.elm.style.left = this.sidebarWidth + 'px'
+                  this._render()
+                }
+              }
+              const mouseup = ev => {
+                document.body.removeEventListener('mouseup', mouseup)
+                document.body.removeEventListener('mousemove', mousemove)
+              }
+              document.body.addEventListener('mouseup', mouseup)
+              document.body.addEventListener('mousemove', mousemove)
+            }
+          }
+        })
       ])
     }
   })
+}
+
+// Sidebar form for a single layer
+function layerForm (canvasState, layer) {
+  let content
+  if (layer.renaming) {
+    content = [
+      h('form', {
+        on: {
+          submit: () => {
+            layer.renaming = false
+            layer._render()
+            canvasState._render()
+          }
+        }
+      }, [
+        h('input', {
+          props: { type: 'text', value: layer.name },
+          on: {
+            input: ev => {
+              layer.name = ev.currentTarget.value
+            }
+          }
+        })
+      ]),
+      h('div', [
+        button({ props: { type: 'submit' } }, 'Set')
+      ])
+    ]
+  } else {
+    content = [
+      h('span.pointer.dib.truncate', {
+        on: { click: () => layer.toggleFormOpen() }
+      }, layer.name),
+      h('div.nowrap', [
+        renameButton(canvasState, layer),
+        copyButton(canvasState, layer),
+        removeButton(canvasState, layer)
+      ])
+    ]
+  }
+  return h('div', { key: layer.name }, [
+    h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between.items-center', content),
+    layer.view()
+  ])
 }
 
 // Field element for canvas width, height, fill, etc
@@ -171,34 +235,12 @@ function shareModalContent (canvasState) {
   ])
 }
 
-/*
-let id = 0
-// TODO
-function Value (canvasState) {
-  return Component({
-    name: 'val-' + id++,
-    value: () => 0,
-    formOpen: true,
-    toggleFormOpen () {
-      this.formOpen = !this.formOpen
-      this._render()
-    },
-    view () {
-      if (!this.formOpen) return h('div', '')
-      return h('div', [
-        field(this, 'value', canvasState)
-      ])
-    }
-  })
-}
-*/
-
 function Canvas (canvasState) {
   return Component({
     view () {
       return h('canvas.fixed.top-0', {
         style: {
-          left: '20rem'
+          left: canvasState.sidebarWidth + 'px'
         },
         props: {
           id: 'tutorial'
@@ -237,15 +279,26 @@ function removeButton (canvasState, layer) {
       click: () => {
         delete canvasState.layers[layer.id]
         canvasState.layerOrder = canvasState.layerOrder.filter(l => l.id !== layer.id)
-        canvasState._render()
         pushToHistory(canvasState, {
           name: 'remove-layer',
           backwards: () => addLayer(canvasState, layer),
           forwards: () => removeLayer(canvasState, layer)
         })
+        canvasState._render()
       }
     }
   }, 'Remove')
+}
+
+function renameButton (canvasState, layer) {
+  return button({
+    on: {
+      click: () => {
+        layer.renaming = true
+        canvasState._render()
+      }
+    }
+  }, 'Rename')
 }
 
 // Takes the full app component, plus a single element
@@ -264,7 +317,6 @@ function copyButton (canvasState, layer) {
           forwards: () => addLayer(canvasState, newLayer)
         })
         addLayer(canvasState, newLayer)
-        console.log('backward actions', canvasState.backwardActions)
       }
     }
   }, 'Copy')
@@ -284,7 +336,6 @@ function newLayerButton (canvasState) {
           forwards: () => addLayer(canvasState, layer)
         })
         addLayer(canvasState, layer)
-        console.log('backward actions', canvasState.backwardActions)
       }
     }
   }, 'Add layer')
@@ -320,7 +371,6 @@ function undoButton (canvasState) {
     },
     on: {
       click: () => {
-        console.log('backward actions', canvasState.backwardActions)
         const action = canvasState.backwardActions.pop()
         action.backwards()
         canvasState.forwardActions.push(action)
@@ -348,15 +398,15 @@ function redoButton (canvasState) {
 
 // Convert the canvas state to json text
 function stateToJson (canvasState) {
-  // mini function to get the properties of one "shape" element
-  const getElem = elem => {
+  // mini function to get the properties of one layer
+  const getLayer = layer => {
     return {
-      f: elem.flags,
-      p: elem.props,
-      n: elem.name
+      f: layer.flags,
+      p: layer.props,
+      n: layer.name
     }
   }
-  const layerOrder = canvasState.layerOrder.map(getElem)
+  const layerOrder = canvasState.layerOrder.map(getLayer)
   const json = JSON.stringify({
     w: canvasState.canvasWidth,
     h: canvasState.canvasHeight,
@@ -380,7 +430,7 @@ function restoreJson (json, canvasState) {
   // - 'w' is canvasWidth
   // - 'fs' is the fillStyle
   // - 'es' is the layerOrder
-  // For each element, we have properties for:
+  // For each layer, we have properties for:
   // - 'p' is props
   // - 'f' is flags
   // - 'n' is name
@@ -392,16 +442,18 @@ function restoreJson (json, canvasState) {
   canvasState.layerOrder = []
   // Falblacks provided for backwards compatibility
   const layers = data.es || data.elemOrder || data.layerOrder || []
-  layers.forEach(elemData => {
-    const elem = Layer(canvasState)
-    const props = elemData.p || elemData.props || {}
+  layers.forEach(layerData => {
+    const layer = Layer(canvasState)
+    const props = layerData.p || layerData.props || {}
     for (let propName in props) {
-      elem.setProperty(propName, props[propName])
+      layer.setProperty(propName, props[propName])
     }
-    elem.flags = elemData.f || elemData.flags
-    elem.name = elemData.n || elemData.name
-    canvasState.layers[elem.name] = elem
-    canvasState.layerOrder.push(elem)
+    layer.flags = layerData.f || layerData.flags
+    layer.name = layerData.n || layerData.name
+    canvasState.layers[layer.name] = layer
+    canvasState.layerOrder.push(layer)
+    canvasState.elm.width = canvasState.canvasWidth
+    canvasState.elm.height = canvasState.canvasHeight
   })
   canvasState._render()
 }
