@@ -39,6 +39,11 @@ function CanvasState () {
     openModal: Modal(),
     // Compressed state of the canvas state and its elements
     compressedState: { loading: false },
+    // undo/redo actions
+    // array of objects with keys for `forwards` and `backwards`
+    // each is a function that moves the state forward or back
+    backwardActions: [],
+    forwardActions: [],
 
     // Compress the canvas state with lzma and generate a share link
     shareState () {
@@ -92,19 +97,21 @@ function CanvasState () {
           content: openModalContent(this)
         }),
         this.shareModal.view({
-          title: 'Save Polygram',
+          title: 'Share Polygram',
           content: shareModalContent(this)
         }),
         h('div.flex.justify-end', [
-          button('Share', () => this.shareState()),
-          button('Open', () => this.openModal.open())
+          button({ on: { click: () => this.shareState() } }, 'Share'),
+          button({ on: { click: () => this.openModal.open() } }, 'Open')
         ]),
         canvasOptionField(this.canvasWidth, 'canvas width', 'number', w => this.changeCanvasWidth(w)),
         canvasOptionField(this.canvasHeight, 'canvas height', 'number', h => this.changeCanvasHeight(h)),
         canvasOptionField(this.fillStyle, 'background color', 'text', fs => this.changeFillStyle(fs)),
         h('div', [
           // newElemButton(this, Value, 'value'),
-          newElemButton(this, Layer, 'layer')
+          newLayerButton(this),
+          undoButton(this),
+          redoButton(this)
         ]),
         h('div', layers)
       ])
@@ -143,7 +150,7 @@ function openModalContent (canvasState) {
     }, [
       h('p', 'Paste a polygram link:'),
       h('textarea.w-100', { props: { rows: 4 } }),
-      button('Load')
+      button({}, 'Load')
     ])
   ])
 }
@@ -154,8 +161,7 @@ function shareModalContent (canvasState) {
     return h('div', [h('p', 'Loading...')])
   }
   return h('div', [
-    h('p', 'Saved!'),
-    h('p', 'Link for this polygram:'),
+    h('p', 'Unique link for this polygram:'),
     h('textarea.w-100', {
       props: {
         value: canvasState.compressedState.content,
@@ -225,36 +231,119 @@ function Canvas (canvasState) {
 }
 
 // Takes the full app component, plus a single element
-function removeButton (canvasState, elem) {
-  return button('Remove', () => {
-    delete canvasState.layers[elem.name]
-    canvasState.layerOrder = canvasState.layerOrder.filter(e => e.name !== elem.name)
-    canvasState._render()
-  })
+function removeButton (canvasState, layer) {
+  return button({
+    on: {
+      click: () => {
+        delete canvasState.layers[layer.id]
+        canvasState.layerOrder = canvasState.layerOrder.filter(l => l.id !== layer.id)
+        canvasState._render()
+        pushToHistory(canvasState, {
+          name: 'remove-layer',
+          backwards: () => addLayer(canvasState, layer),
+          forwards: () => removeLayer(canvasState, layer)
+        })
+      }
+    }
+  }, 'Remove')
 }
 
 // Takes the full app component, plus a single element
-function copyButton (canvasState, elem) {
-  return button('Copy', () => {
-    const newElem = Layer(canvasState)
-    const props = Object.assign({}, elem.props)
-    const flags = Object.assign({}, elem.flags)
-    newElem.props = props
-    newElem.flags = flags
-    canvasState.layers[newElem.name] = newElem
-    canvasState.layerOrder.push(newElem)
-    canvasState._render()
-  })
+function copyButton (canvasState, layer) {
+  return button({
+    on: {
+      click: () => {
+        const newLayer = Layer(canvasState)
+        const props = Object.assign({}, layer.props)
+        const flags = Object.assign({}, layer.flags)
+        newLayer.props = props
+        newLayer.flags = flags
+        pushToHistory(canvasState, {
+          name: 'copy-layer',
+          backwards: () => removeLayer(canvasState, newLayer),
+          forwards: () => addLayer(canvasState, newLayer)
+        })
+        addLayer(canvasState, newLayer)
+        console.log('backward actions', canvasState.backwardActions)
+      }
+    }
+  }, 'Copy')
 }
 
 // Create a new shape
-function newElemButton (canvasState, constructor, name) {
-  return button('Add ' + name, () => {
-    const cmp = constructor(canvasState)
-    canvasState.layers[cmp.name] = cmp
-    canvasState.layerOrder.push(cmp)
-    canvasState._render()
-  })
+function newLayerButton (canvasState) {
+  return button({
+    on: {
+      click: () => {
+        // Create and append a new layer, saving undo/redo history actions for it
+        const layer = Layer(canvasState)
+        // For undo/redo actions
+        pushToHistory(canvasState, {
+          name: 'new-layer',
+          backwards: () => removeLayer(canvasState, layer),
+          forwards: () => addLayer(canvasState, layer)
+        })
+        addLayer(canvasState, layer)
+        console.log('backward actions', canvasState.backwardActions)
+      }
+    }
+  }, 'Add layer')
+}
+
+// Add new backwards and forwards actions to the canvas history
+// This happens on any new action. It erases the forwardActions, if present.
+function pushToHistory (canvasState, actions) {
+  canvasState.backwardActions.push(actions)
+  if (canvasState.forwardActions.length) {
+    canvasState.forwardActions = []
+  }
+}
+
+// Add a new layer to the canvas state
+function addLayer (canvasState, layer) {
+  canvasState.layers[layer.id] = layer
+  canvasState.layerOrder.push(layer)
+  canvasState._render()
+}
+
+// Remove an existing layer from the canvas state
+function removeLayer (canvasState, layer) {
+  canvasState.layerOrder = canvasState.layerOrder.filter(l => l.id !== layer.id)
+  delete canvasState.layers[layer.id]
+  canvasState._render()
+}
+
+function undoButton (canvasState) {
+  return button({
+    props: {
+      disabled: !canvasState.backwardActions.length
+    },
+    on: {
+      click: () => {
+        console.log('backward actions', canvasState.backwardActions)
+        const action = canvasState.backwardActions.pop()
+        action.backwards()
+        canvasState.forwardActions.push(action)
+        canvasState._render()
+      }
+    }
+  }, 'Undo')
+}
+
+function redoButton (canvasState) {
+  return button({
+    props: {
+      disabled: !canvasState.forwardActions.length
+    },
+    on: {
+      click: () => {
+        const action = canvasState.forwardActions.pop()
+        action.forwards()
+        canvasState.backwardActions.push(action)
+        canvasState._render()
+      }
+    }
+  }, 'Redo')
 }
 
 // Convert the canvas state to json text

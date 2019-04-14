@@ -14,6 +14,7 @@ window.floor = Math.floor
 function Layer (canvasState) {
   return Component({
     name: 'layer-' + id++,
+    id: String(window.performance.now()),
     formOpen: true,
     flags: {
       hasFill: true,
@@ -171,7 +172,7 @@ function evaluate (layer, propName, idx) {
 
 function fieldGroup (layer, opts) {
   const { flag, name, children } = opts
-  const htmlID = 'field-flag-' + layer.name
+  const htmlID = 'field-flag-' + layer.name + '-' + flag
   const isOpen = layer.flags[flag]
   return h('div.bl.bw2.pl1.pb1.mb2', {
     class: {
