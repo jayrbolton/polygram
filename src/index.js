@@ -253,8 +253,8 @@ function Canvas (canvasState) {
               document._ts = ts
               ctx.fillStyle = canvasState.fillStyle || 'white'
               ctx.fillRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
-              for (let name in canvasState.layers) {
-                let shape = canvasState.layers[name]
+              for (let id in canvasState.layers) {
+                let shape = canvasState.layers[id]
                 if (shape.draw) shape.draw(ctx)
               }
               window.requestAnimationFrame(draw)
@@ -272,13 +272,12 @@ function removeButton (canvasState, layer) {
   return button({
     on: {
       click: () => {
-        delete canvasState.layers[layer.id]
-        canvasState.layerOrder = canvasState.layerOrder.filter(l => l.id !== layer.id)
         pushToHistory(canvasState, {
           name: 'remove-layer',
           backwards: () => addLayer(canvasState, layer),
           forwards: () => removeLayer(canvasState, layer)
         })
+        removeLayer(canvasState, layer)
         canvasState._render()
       }
     }
@@ -442,7 +441,7 @@ function restoreJson (json, canvasState) {
     }
     layer.flags = layerData.f
     layer.name = layerData.n
-    canvasState.layers[layer.name] = layer
+    canvasState.layers[layer.id] = layer
     canvasState.layerOrder.push(layer)
     if (canvasState.elm) {
       canvasState.elm.width = canvasState.canvasWidth
