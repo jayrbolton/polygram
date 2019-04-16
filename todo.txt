@@ -1,3 +1,2 @@
-- rename functionality
 - ++ allow more shapes than rect
 - ++ global constants

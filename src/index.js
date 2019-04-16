@@ -1,7 +1,5 @@
 const { Component, h } = require('uzu')
-
-// Because lzma is not set up for browserify/webpack, we inject it into our codebase to make it work.
-const lzma = require('./vendor/lzma').LZMA()
+const pako = require('pako') // for string compression
 
 // Components and views
 const { Modal } = require('./components/Modal')
@@ -46,18 +44,15 @@ function CanvasState () {
     backwardActions: [],
     forwardActions: [],
 
-    // Compress the canvas state with lzma and generate a share link
+    // Compress the canvas state and generate a share link
     shareState () {
       this.shareModal.open()
-      this.compressedState.loading = true
       this._render()
       const jsonState = stateToJson(this)
-      persistCompressed(jsonState, result => {
-        this.compressedState.loading = false
-        document.location.hash = result
-        this.compressedState.content = window.location.href
-        this._render()
-      })
+      const result = persistCompressed(jsonState)
+      document.location.hash = result
+      this.compressedState.content = window.location.href
+      this._render()
     },
 
     changeCanvasHeight (height) {
@@ -417,10 +412,8 @@ function stateToJson (canvasState) {
 }
 
 function persistCompressed (json, cb) {
-  lzma.compress(json, 2, result => {
-    const str = Buffer.from(result).toString('base64')
-    cb(str)
-  })
+  const bin = pako.deflate(json)
+  return Buffer.from(bin).toString('base64')
 }
 
 // Restore from a json string
@@ -435,35 +428,35 @@ function restoreJson (json, canvasState) {
   // - 'f' is flags
   // - 'n' is name
   const data = JSON.parse(json)
-  canvasState.canvasWidth = data.w || data.canvasWidth
-  canvasState.canvasHeight = data.h || data.canvasHeight
+  canvasState.canvasWidth = data.w
+  canvasState.canvasHeight = data.h
   canvasState.fillStyle = data.fs || 'white'
   canvasState.layers = {}
   canvasState.layerOrder = []
-  // Falblacks provided for backwards compatibility
-  const layers = data.es || data.elemOrder || data.layerOrder || []
+  const layers = data.es
   layers.forEach(layerData => {
     const layer = Layer(canvasState)
-    const props = layerData.p || layerData.props || {}
+    const props = layerData.p
     for (let propName in props) {
       layer.setProperty(propName, props[propName])
     }
-    layer.flags = layerData.f || layerData.flags
-    layer.name = layerData.n || layerData.name
+    layer.flags = layerData.f
+    layer.name = layerData.n
     canvasState.layers[layer.name] = layer
     canvasState.layerOrder.push(layer)
-    canvasState.elm.width = canvasState.canvasWidth
-    canvasState.elm.height = canvasState.canvasHeight
+    if (canvasState.elm) {
+      canvasState.elm.width = canvasState.canvasWidth
+      canvasState.elm.height = canvasState.canvasHeight
+    }
   })
   canvasState._render()
 }
 
-// Restore from a lzma-compressed url hash
+// Restore from a pako-compressed url hash
 function restoreCompressed (compressed, canvasState) {
   const bytes = Buffer.from(compressed, 'base64')
-  lzma.decompress(bytes, result => {
-    restoreJson(result, canvasState)
-  })
+  const result = pako.inflate(bytes, { to: 'string' })
+  restoreJson(result, canvasState)
 }
 
 // Track the mouse x/y coords globally
