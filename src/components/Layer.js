@@ -8,11 +8,11 @@ let id = 0
 
 const start = window.performance.now()
 window.ts = () => window.performance.now() - start
-window.floor = Math.floor
 
 // A layer of elements, to be drawn on the canvas at every frame.
 function Layer (canvasState) {
   return Component({
+    canvasState, // Save a reference to the parent canvasState
     name: 'layer-' + id++,
     id: String(window.performance.now()),
     // Is the form for this layer collapsed in the sidebar?
@@ -51,20 +51,22 @@ function Layer (canvasState) {
       scaleY: 1
     },
 
+    // Open or close a section of the layer's form
     toggleFormOpen () {
       this.formOpen = !this.formOpen
       this._render()
     },
 
+    // Toggle a flag, such as hasFill or hasStroke
     toggleFieldGroup (flag) {
-      // Toggle field group flag
       this.flags[flag] = !this.flags[flag]
       this._render()
     },
 
     // Draw all elements in the layer
     draw (ctx) {
-      for (let i = 0; i < this.props.copies; i++) {
+      const copies = evaluate(this, 'copies', 0)
+      for (let i = 0; i < copies; i++) {
         this.drawOne(ctx, i)
       }
     },
@@ -98,10 +100,12 @@ function Layer (canvasState) {
       ctx.translate(-x, -y)
     },
 
+    // Set a property (in `.props`) for this layer from some field input
     setProperty (propName, value) {
       this.props[propName] = value
       this.errs[propName] = false
       this.funcs[propName] = parseFunc(value, this, propName)
+      window.funcs = this.funcs
     },
 
     view () {
@@ -127,6 +131,7 @@ function Layer (canvasState) {
           ]
         }),
 
+        // Stroke
         fieldGroup(this, {
           flag: 'hasStroke',
           name: 'stroke',
@@ -139,6 +144,7 @@ function Layer (canvasState) {
           ]
         }),
 
+        // Rotation
         fieldGroup(this, {
           flag: 'hasRotation',
           name: 'rotation',
@@ -153,9 +159,14 @@ function Layer (canvasState) {
   })
 }
 
+// Convert some expression in a field into a callable function object
 function parseFunc (str, layer, propName) {
   try {
-    return Function('i', 'return ' + str) // eslint-disable-line
+    const args = layer.canvasState.constants.arr.map(({ name, value }) => name)
+    args.unshift('i') // for 'index'
+    args.push('return ' + str)
+    const func = Function.apply(void 0, args)
+    return func
   } catch (e) {
     return function () {}
   }
@@ -163,16 +174,22 @@ function parseFunc (str, layer, propName) {
 
 function evaluate (layer, propName, idx) {
   if (propName in layer.funcs) {
+    // If this property already has an error, do not re-evaluate it
     if (layer.errs[propName]) {
       return null
     }
     try {
-      return layer.funcs[propName](idx)
+      // Apply the stored function object
+      const args = layer.canvasState.constants.arr.map(({ name, value }) => value)
+      args.unshift(idx)
+      const result = layer.funcs[propName].apply(null, args)
+      return result
     } catch (e) {
-      layer.errs[propName] = true
       console.error(e)
+      layer.errs[propName] = true
     }
   } else {
+    // Not a function; just return the plain value
     return layer.props[propName]
   }
 }

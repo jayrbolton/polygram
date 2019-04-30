@@ -4,8 +4,11 @@ const pako = require('pako') // for string compression
 // Components and views
 const { Modal } = require('./components/Modal')
 const { Layer } = require('./components/Layer')
+const { Constants } = require('./components/Constants')
 const button = require('./components/button')
 const fieldset = require('./components/fieldset')
+
+// TODO persist constants in the url
 
 function App () {
   // State of the drawing, including all the sidebar option fields.
@@ -25,7 +28,9 @@ function App () {
 }
 
 function CanvasState () {
+  const constants = Constants() // Constant values that can be used inside layers
   return Component({
+    constants,
     canvasWidth: 1000,
     canvasHeight: 1000,
     sidebarWidth: 400,
@@ -96,6 +101,7 @@ function CanvasState () {
           undoButton(this),
           redoButton(this)
         ]),
+        h('div', this.constants.view()),
         h('div', layers),
         // right-side pull bar
         h('div', {
