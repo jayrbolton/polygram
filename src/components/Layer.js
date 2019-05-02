@@ -19,11 +19,8 @@ function Layer (canvasState) {
     formOpen: true,
     // Is the user currently renaming this layer?
     renaming: false,
-    flags: {
-      hasFill: true,
-      hasRotation: false,
-      hasStroke: false
-    },
+    // Toggles for whole sections of fields
+    flags: { hasFill: true, hasRotation: false, hasStroke: false },
     // Mark which fields are causing errors so we don't re-eval
     errs: {},
     // Parsed functions for each property
@@ -80,12 +77,13 @@ function Layer (canvasState) {
       const { x, y } = values
       ctx.translate(x, y)
       if (this.flags.hasRotation) {
-        // ctx.translate(values.rotateX, values.rotateY)
+        ctx.translate(values.rotateX, values.rotateY)
         ctx.rotate(values.radians)
+        ctx.translate(-values.rotateX, -values.rotateY)
       }
       if (this.flags.hasFill) {
         ctx.fillStyle = 'rgba(' + values.fillRed + ', ' + values.fillGreen + ', ' + values.fillBlue + ', ' + values.fillAlpha + ')'
-        ctx.fillRect(-values.rotateX || 0, -values.rotateY || 0, values.width, values.height)
+        ctx.fillRect(0, 0, values.width, values.height)
       }
       if (this.flags.hasStroke) {
         const strokeWidth = values.strokeWidth
@@ -93,11 +91,7 @@ function Layer (canvasState) {
         ctx.lineWidth = strokeWidth
         ctx.strokeRect(0, 0, values.width, values.height)
       }
-      if (this.flags.hasRotation) {
-        ctx.rotate(-values.radians)
-        // ctx.translate(-values.rotateX, -values.rotateY)
-      }
-      ctx.translate(-x, -y)
+      ctx.resetTransform()
     },
 
     // Set a property (in `.props`) for this layer from some field input
@@ -162,10 +156,9 @@ function Layer (canvasState) {
 // Convert some expression in a field into a callable function object
 function parseFunc (str, layer, propName) {
   try {
-    const args = layer.canvasState.constants.arr.map(({ name, value }) => name)
-    args.unshift('i') // for 'index'
-    args.push('return ' + str)
-    const func = Function.apply(void 0, args)
+    // This is funky as heck. Just accept it in your life.
+    const expr = 'with (constants) { return ' + str + '}'
+    const func = new Function('i', 'constants', expr) // eslint-disable-line
     return func
   } catch (e) {
     return function () {}
@@ -175,17 +168,16 @@ function parseFunc (str, layer, propName) {
 function evaluate (layer, propName, idx) {
   if (propName in layer.funcs) {
     // If this property already has an error, do not re-evaluate it
+    /*
     if (layer.errs[propName]) {
       return null
     }
+    */
     try {
       // Apply the stored function object
-      const args = layer.canvasState.constants.arr.map(({ name, value }) => value)
-      args.unshift(idx)
-      const result = layer.funcs[propName].apply(null, args)
+      const result = layer.funcs[propName](idx, layer.canvasState.constants.obj)
       return result
     } catch (e) {
-      console.error(e)
       layer.errs[propName] = true
     }
   } else {

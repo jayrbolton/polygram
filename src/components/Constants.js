@@ -16,54 +16,63 @@ function Constants () {
   const initialConst = { name: 'c', value: 100 }
   return Component({
     // Array and object for keeping the order and hashtable of the constants
-    obj: { [initialConst.name]: initialConst },
-    arr: [initialConst],
+    // keys are names and values are number values
+    obj: { [initialConst.name]: initialConst.value },
+    // Array of {name, value}
+    arr: [initialConst.name],
 
     appendConstant () {
-      const constant = { name: 'c_' + id++, value: 0 }
-      this.arr.push(constant)
-      this.obj[constant.name] = constant.value
+      const name = 'c_' + id++
+      const value = 0
+      this.arr.push(name)
+      this.obj[name] = value
       this._render()
     },
 
-    setConstName (name, newName) {
-      if (!(name in this.obj)) return
-      const c = this.obj[name]
-      c.name = newName
-      this.obj[newName] = c
-      delete this.obj[name]
-      this._render()
+    setConstName (name, newName, idx) {
+      // Add a 500ms delay for setting this
+      const updater = () => {
+        if (!(name in this.obj)) return
+        this.obj[newName] = this.obj[name]
+        delete this.obj[name]
+        this.arr[idx] = newName
+        this._render()
+      }
+      if (this.renameTimeout) {
+        clearTimeout(this.renameTimeout)
+      }
+      this.renameTimeout = setTimeout(updater, 500)
     },
 
     setConstVal (name, newVal) {
       if (!(name in this.obj)) return
-      const c = this.obj[name]
-      c.value = newVal
+      this.obj[name] = newVal
       this._render()
     },
 
     view () {
-      const inputs = this.arr.map(constant => {
+      const inputs = this.arr.map((name, idx) => {
+        const value = this.obj[name]
         return h('div.flex', [
-          h('input.w-100.code.f6.pa1', {
+          h('input.w-30.code.f6.pa1', {
             props: {
               type: 'text',
-              value: constant.name
+              value: name
             },
             on: {
               input: ev => {
-                this.setConstName(constant.name, ev.currentTarget.value)
+                this.setConstName(name, ev.currentTarget.value, idx)
               }
             }
           }),
-          h('input.w-100.code.f6.pa1', {
+          h('input.w-70.code.f6.pa1', {
             props: {
-              type: 'number',
-              value: constant.value
+              type: 'text',
+              value: value
             },
             on: {
               input: ev => {
-                this.setConstVal(constant.name, ev.currentTarget.value)
+                this.setConstVal(name, ev.currentTarget.value)
               }
             }
           })

@@ -210,6 +210,7 @@ function openModalContent (canvasState) {
           const link = ev.currentTarget.querySelector('textarea').value
           const compressed = link.match(/#(.+)$/)[1]
           restoreCompressed(compressed, canvasState)
+          canvasState.openModal.close()
         }
       }
     }, [
@@ -407,10 +408,14 @@ function stateToJson (canvasState) {
     }
   }
   const layerOrder = canvasState.layerOrder.map(getLayer)
+  const constants = canvasState.constants.arr.map(name => {
+    return [name, canvasState.constants.obj[name]]
+  })
   const json = JSON.stringify({
     w: canvasState.canvasWidth,
     h: canvasState.canvasHeight,
     fs: canvasState.fillStyle,
+    cs: constants,
     es: layerOrder
   })
   return json
@@ -428,6 +433,7 @@ function restoreJson (json, canvasState) {
   // - 'w' is canvasWidth
   // - 'fs' is the fillStyle
   // - 'es' is the layerOrder
+  // - 'cs' are the constants in an array of pairs of [name, value]
   // For each layer, we have properties for:
   // - 'p' is props
   // - 'f' is flags
@@ -438,7 +444,7 @@ function restoreJson (json, canvasState) {
   canvasState.fillStyle = data.fs || 'white'
   canvasState.layers = {}
   canvasState.layerOrder = []
-  const layers = data.es
+  const layers = data.es || []
   layers.forEach(layerData => {
     const layer = Layer(canvasState)
     const props = layerData.p
@@ -453,6 +459,14 @@ function restoreJson (json, canvasState) {
       canvasState.elm.width = canvasState.canvasWidth
       canvasState.elm.height = canvasState.canvasHeight
     }
+  })
+  // Restore constants
+  canvasState.constants.obj = {}
+  canvasState.constants.arr = []
+  const constants = data.cs || []
+  constants.forEach(([name, val]) => {
+    canvasState.constants.arr.push(name)
+    canvasState.constants.obj[name] = val
   })
   canvasState._render()
 }
