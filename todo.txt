@@ -1,1 +1,2 @@
+- error states on fields anywhere in canvas state (just red border)
 - ++ allow more shapes than rect

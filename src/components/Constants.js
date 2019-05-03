@@ -9,7 +9,6 @@ const button = require('./button')
 // For assigning a unique name to new constants
 let id = 0
 
-// TODO error handling on duplicate constant names
 // TODO validate for variable naming syntax errors (cannot be called 'const'!)
 
 function Constants () {
@@ -30,6 +29,13 @@ function Constants () {
     },
 
     setConstName (name, newName, idx) {
+      newName = newName.trim()
+      const isValid = isValidName(newName)
+      if (!isValid) {
+        this.errors[newName] = true
+        console.error('Invalid name: ' + newName)
+        return
+      }
       // Add a 500ms delay for setting this
       const updater = () => {
         if (!(name in this.obj)) return
@@ -93,6 +99,14 @@ function Constants () {
       ])
     }
   })
+}
+
+function isValidName (name) {
+  const regex = /^[A-Za-z_$][^\s]*$/
+  if (!regex.test(name.trim())) return false
+  const keywords = ['const', 'var', 'let', 'function', 'class', 'break', 'case', 'catch', 'continue', 'debugger', 'default', 'delete', 'do', 'else', 'finally', 'for', 'if', 'in', 'instanceof', 'new', 'return', 'switch', 'this', 'throw', 'try', 'typeof', 'void', 'while', 'with', 'true', 'false', 'export', 'extends', 'import', 'super', 'yield']
+  if (keywords.indexOf(name) !== -1) return false
+  return true
 }
 
 module.exports = { Constants }

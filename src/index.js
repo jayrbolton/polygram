@@ -8,8 +8,6 @@ const { Constants } = require('./components/Constants')
 const button = require('./components/button')
 const fieldset = require('./components/fieldset')
 
-// TODO persist constants in the url
-
 function App () {
   // State of the drawing, including all the sidebar option fields.
   const canvasState = CanvasState()
