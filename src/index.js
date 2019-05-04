@@ -47,6 +47,29 @@ function CanvasState () {
     backwardActions: [],
     forwardActions: [],
 
+    // Add new backwards and forwards actions to the canvas history
+    // This happens on any new action. It erases the forwardActions, if present.
+    pushToHistory (actions) {
+      this.backwardActions.push(actions)
+      if (this.forwardActions.length) {
+        this.forwardActions = []
+      }
+    },
+
+    // Add a new layer to the canvas state
+    addLayer (layer) {
+      this.layers[layer.id] = layer
+      this.layerOrder.push(layer)
+      this._render()
+    },
+
+    // Remove an existing layer from the canvas state
+    removeLayer (layer) {
+      this.layerOrder = this.layerOrder.filter(l => l.id !== layer.id)
+      delete this.layers[layer.id]
+      this._render()
+    },
+
     // Compress the canvas state and generate a share link
     shareState () {
       this.shareModal.open()
@@ -75,8 +98,8 @@ function CanvasState () {
 
     // Left sidepanel for controlling the state of the canvas
     view () {
-      const layers = this.layerOrder.map(layer => layerForm(this, layer))
-      return h('div.bg-light-gray.pv2.pl2.pr3.relative', {
+      const layers = this.layerOrder.map(layer => layer.view())
+      return h('div.pv2.pl2.pr3.relative', {
         style: { width: this.sidebarWidth + 'px' }
       }, [
         this.openModal.view({
@@ -89,11 +112,15 @@ function CanvasState () {
         }),
         h('div.flex.justify-end', [
           button({ on: { click: () => this.shareState() } }, 'Share'),
-          button({ on: { click: () => this.openModal.open() } }, 'Open')
+          button({ on: { click: () => this.openModal.open() } }, 'Open'),
+          button({}, 'Help!')
         ]),
-        canvasOptionField(this.canvasWidth, 'canvas width', 'number', w => this.changeCanvasWidth(w)),
-        canvasOptionField(this.canvasHeight, 'canvas height', 'number', h => this.changeCanvasHeight(h)),
-        canvasOptionField(this.fillStyle, 'background color', 'text', fs => this.changeFillStyle(fs)),
+        h('label.b.db.code', 'canvas'),
+        h('div.flex.justify-between', [
+          canvasOptionField(this.canvasWidth, 'width', 'number', w => this.changeCanvasWidth(w)),
+          canvasOptionField(this.canvasHeight, 'height', 'number', h => this.changeCanvasHeight(h)),
+          canvasOptionField(this.fillStyle, 'color', 'text', fs => this.changeFillStyle(fs))
+        ]),
         h('div', [
           newLayerButton(this),
           undoButton(this),
@@ -106,8 +133,9 @@ function CanvasState () {
           style: {
             position: 'absolute',
             height: '100%',
-            width: '6px',
-            background: 'gray',
+            width: '10px',
+            background: 'black',
+            borderRight: '4px solid gray',
             top: '0px',
             right: '0px',
             zIndex: '0',
@@ -119,7 +147,7 @@ function CanvasState () {
                 const xPos = ev.clientX
                 if (xPos > 200 && xPos < 1000) {
                   this.sidebarWidth = xPos
-                  this.elm.style.left = this.sidebarWidth + 'px'
+                  this.elm.style.left = this.sidebarWidth + 10 + 'px'
                   this._render()
                 }
               }
@@ -135,51 +163,6 @@ function CanvasState () {
       ])
     }
   })
-}
-
-// Sidebar form for a single layer
-function layerForm (canvasState, layer) {
-  let content
-  if (layer.renaming) {
-    content = [
-      h('form', {
-        on: {
-          submit: () => {
-            layer.renaming = false
-            layer._render()
-            canvasState._render()
-          }
-        }
-      }, [
-        h('input', {
-          props: { type: 'text', value: layer.name },
-          on: {
-            input: ev => {
-              layer.name = ev.currentTarget.value
-            }
-          }
-        })
-      ]),
-      h('div', [
-        button({ props: { type: 'submit' } }, 'Set')
-      ])
-    ]
-  } else {
-    content = [
-      h('span.pointer.dib.truncate', {
-        on: { click: () => layer.toggleFormOpen() }
-      }, layer.name),
-      h('div.nowrap', [
-        renameButton(canvasState, layer),
-        copyButton(canvasState, layer),
-        removeButton(canvasState, layer)
-      ])
-    ]
-  }
-  return h('div', { key: layer.name }, [
-    h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between.items-center', content),
-    layer.view()
-  ])
 }
 
 // Field element for canvas width, height, fill, etc
@@ -240,7 +223,7 @@ function Canvas (canvasState) {
     view () {
       return h('canvas.fixed.top-0', {
         style: {
-          left: canvasState.sidebarWidth + 'px'
+          left: canvasState.sidebarWidth + 10 + 'px'
         },
         props: {
           id: 'tutorial'
@@ -272,55 +255,6 @@ function Canvas (canvasState) {
   })
 }
 
-// Takes the full app component, plus a single element
-function removeButton (canvasState, layer) {
-  return button({
-    on: {
-      click: () => {
-        pushToHistory(canvasState, {
-          name: 'remove-layer',
-          backwards: () => addLayer(canvasState, layer),
-          forwards: () => removeLayer(canvasState, layer)
-        })
-        removeLayer(canvasState, layer)
-        canvasState._render()
-      }
-    }
-  }, 'Remove')
-}
-
-function renameButton (canvasState, layer) {
-  return button({
-    on: {
-      click: () => {
-        layer.renaming = true
-        canvasState._render()
-      }
-    }
-  }, 'Rename')
-}
-
-// Takes the full app component, plus a single element
-function copyButton (canvasState, layer) {
-  return button({
-    on: {
-      click: () => {
-        const newLayer = Layer(canvasState)
-        const props = Object.assign({}, layer.props)
-        const flags = Object.assign({}, layer.flags)
-        newLayer.props = props
-        newLayer.flags = flags
-        pushToHistory(canvasState, {
-          name: 'copy-layer',
-          backwards: () => removeLayer(canvasState, newLayer),
-          forwards: () => addLayer(canvasState, newLayer)
-        })
-        addLayer(canvasState, newLayer)
-      }
-    }
-  }, 'Copy')
-}
-
 // Create a new shape
 function newLayerButton (canvasState) {
   return button({
@@ -329,38 +263,15 @@ function newLayerButton (canvasState) {
         // Create and append a new layer, saving undo/redo history actions for it
         const layer = Layer(canvasState)
         // For undo/redo actions
-        pushToHistory(canvasState, {
+        canvasState.pushToHistory({
           name: 'new-layer',
-          backwards: () => removeLayer(canvasState, layer),
-          forwards: () => addLayer(canvasState, layer)
+          backwards: () => canvasState.removeLayer(layer),
+          forwards: () => canvasState.addLayer(layer)
         })
-        addLayer(canvasState, layer)
+        canvasState.addLayer(layer)
       }
     }
   }, 'Add layer')
-}
-
-// Add new backwards and forwards actions to the canvas history
-// This happens on any new action. It erases the forwardActions, if present.
-function pushToHistory (canvasState, actions) {
-  canvasState.backwardActions.push(actions)
-  if (canvasState.forwardActions.length) {
-    canvasState.forwardActions = []
-  }
-}
-
-// Add a new layer to the canvas state
-function addLayer (canvasState, layer) {
-  canvasState.layers[layer.id] = layer
-  canvasState.layerOrder.push(layer)
-  canvasState._render()
-}
-
-// Remove an existing layer from the canvas state
-function removeLayer (canvasState, layer) {
-  canvasState.layerOrder = canvasState.layerOrder.filter(l => l.id !== layer.id)
-  delete canvasState.layers[layer.id]
-  canvasState._render()
 }
 
 function undoButton (canvasState) {

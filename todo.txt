@@ -1,2 +1,8 @@
 - error states on fields anywhere in canvas state (just red border)
+- have undo action for removing constants
+- (??) maybe get rid of undo action on adding a layer
+
 - ++ allow more shapes than rect
+  - dropdown for "shape"
+  - size only
+  - add skew section

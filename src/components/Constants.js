@@ -9,8 +9,6 @@ const button = require('./button')
 // For assigning a unique name to new constants
 let id = 0
 
-// TODO validate for variable naming syntax errors (cannot be called 'const'!)
-
 function Constants () {
   const initialConst = { name: 'c', value: 100 }
   return Component({
@@ -19,10 +17,13 @@ function Constants () {
     obj: { [initialConst.name]: initialConst.value },
     // Array of {name, value}
     arr: [initialConst.name],
+    // The constants section is collapsible
+    isOpen: true,
 
     appendConstant () {
       const name = 'c_' + id++
       const value = 0
+      this.isOpen = true
       this.arr.push(name)
       this.obj[name] = value
       this._render()
@@ -56,6 +57,12 @@ function Constants () {
       this._render()
     },
 
+    removeConstant (name) {
+      delete this.obj[name]
+      this.arr = this.arr.filter(n => n !== name)
+      this._render()
+    },
+
     view () {
       const inputs = this.arr.map((name, idx) => {
         const value = this.obj[name]
@@ -81,21 +88,32 @@ function Constants () {
                 this.setConstVal(name, ev.currentTarget.value)
               }
             }
-          })
+          }),
+          button({
+            on: { click: () => this.removeConstant(name) }
+          }, 'X')
         ])
       })
       return h('div', [
         h('div.flex.justify-between.items-center', [
-          h('span.code', 'constants'),
-          button({
+          h('span.code.b.pointer', {
             on: {
-              click: ev => {
-                this.appendConstant()
+              click: () => {
+                this.isOpen = !this.isOpen
+                this._render()
               }
             }
-          }, 'Add another')
+          }, [
+            h('span.mr1.black-60', this.isOpen ? '−' : '+'),
+            'constants'
+          ]),
+          button({
+            on: { click: ev => this.appendConstant() }
+          }, '+ Constant')
         ]),
-        h('div', inputs)
+        h('div', {
+          class: { dn: !this.isOpen }
+        }, inputs)
       ])
     }
   })
