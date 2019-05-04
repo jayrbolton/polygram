@@ -19,6 +19,8 @@ function Constants () {
     arr: [initialConst.name],
     // The constants section is collapsible
     isOpen: true,
+    // Any constants in an error state
+    errors: {},
 
     appendConstant () {
       const name = 'c_' + id++
@@ -30,25 +32,19 @@ function Constants () {
     },
 
     setConstName (name, newName, idx) {
-      newName = newName.trim()
+      if (!(name in this.obj)) return
+      this.obj[newName] = this.obj[name]
+      delete this.obj[name]
+      this.arr[idx] = newName
+      // Validate the name
       const isValid = isValidName(newName)
       if (!isValid) {
         this.errors[newName] = true
         console.error('Invalid name: ' + newName)
-        return
+      } else {
+        delete this.errors[newName]
       }
-      // Add a 500ms delay for setting this
-      const updater = () => {
-        if (!(name in this.obj)) return
-        this.obj[newName] = this.obj[name]
-        delete this.obj[name]
-        this.arr[idx] = newName
-        this._render()
-      }
-      if (this.renameTimeout) {
-        clearTimeout(this.renameTimeout)
-      }
-      this.renameTimeout = setTimeout(updater, 500)
+      this._render()
     },
 
     setConstVal (name, newVal) {
@@ -68,9 +64,12 @@ function Constants () {
         const value = this.obj[name]
         return h('div.flex', [
           h('input.w-30.code.f6.pa1', {
+            class: {
+              'b--red': this.errors[name]
+            },
             props: {
               type: 'text',
-              value: name
+              value: name || ''
             },
             on: {
               input: ev => {
@@ -81,7 +80,7 @@ function Constants () {
           h('input.w-70.code.f6.pa1', {
             props: {
               type: 'text',
-              value: value
+              value: value || ''
             },
             on: {
               input: ev => {

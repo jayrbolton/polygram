@@ -1,8 +1,9 @@
 const { h } = require('uzu')
 const fieldset = require('./fieldset')
 
-module.exports = function field ({ type = 'text', value, oninput, label }) {
+module.exports = function field ({ type = 'text', classes = {}, value, oninput, label }) {
   const inp = h('input.w-100.code.f6.pa1', {
+    class: classes,
     props: { type: 'text', value },
     on: { input: oninput }
   })

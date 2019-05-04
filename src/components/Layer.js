@@ -23,7 +23,7 @@ function Layer (canvasState) {
     // Toggles for whole sections of fields
     flags: { hasFill: true, hasRotation: false, hasStroke: false },
     // Mark which fields are causing errors so we don't re-eval
-    errs: {},
+    errors: {},
     // Parsed functions for each property
     funcs: {},
     // Input values for each field
@@ -98,7 +98,6 @@ function Layer (canvasState) {
     // Set a property (in `.props`) for this layer from some field input
     setProperty (propName, value) {
       this.props[propName] = value
-      this.errs[propName] = false
       this.funcs[propName] = parseFunc(value, this, propName)
       window.funcs = this.funcs
     },
@@ -115,24 +114,21 @@ function Layer (canvasState) {
 }
 
 function layerFields (layer) {
-  const setProp = (propName) => (ev) => {
-    layer.setProperty(propName, ev.currentTarget.value)
-  }
   return [
-    field({ value: layer.props['copies'], label: 'copies', oninput: setProp('copies') }),
-    field({ value: layer.props['width'], label: 'width', oninput: setProp('width') }),
-    field({ value: layer.props['height'], label: 'height', oninput: setProp('height') }),
-    field({ value: layer.props['x'], label: 'x', oninput: setProp('x') }),
-    field({ value: layer.props['y'], label: 'y', oninput: setProp('y') }),
+    layerField(layer, { name: 'copies' }),
+    layerField(layer, { name: 'width' }),
+    layerField(layer, { name: 'height' }),
+    layerField(layer, { name: 'x' }),
+    layerField(layer, { name: 'y' }),
     // Fill
     fieldGroup(layer, {
       flag: 'hasFill',
       name: 'fill',
       children: [
-        field({ value: layer.props['fillRed'], label: 'fill red', oninput: setProp('fillRed') }),
-        field({ value: layer.props['fillBlue'], label: 'fill blue', oninput: setProp('fillBlue') }),
-        field({ value: layer.props['fillGreen'], label: 'fill green', oninput: setProp('fillGreen') }),
-        field({ value: layer.props['fillAlpha'], label: 'fill alpha', oninput: setProp('fillAlpha') })
+        layerField(layer, { name: 'fillRed', label: 'fill red' }),
+        layerField(layer, { name: 'fillBlue', label: 'fill blue' }),
+        layerField(layer, { name: 'fillGreen', label: 'fill green' }),
+        layerField(layer, { name: 'fillAlpha', label: 'fill alpha' })
       ]
     }),
 
@@ -141,11 +137,11 @@ function layerFields (layer) {
       flag: 'hasStroke',
       name: 'stroke',
       children: [
-        field({ value: layer.props['strokeRed'], label: 'stroke red', oninput: setProp('strokeRed') }),
-        field({ value: layer.props['strokeGreen'], label: 'stroke green', oninput: setProp('strokeGreen') }),
-        field({ value: layer.props['strokeBlue'], label: 'stroke blue', oninput: setProp('strokeBlue') }),
-        field({ value: layer.props['strokeAlpha'], label: 'stroke alpha', oninput: setProp('strokeAlpha') }),
-        field({ value: layer.props['strokeWidth'], label: 'stroke width', oninput: setProp('strokeWidth') })
+        layerField(layer, { name: 'strokeRed', label: 'stroke red' }),
+        layerField(layer, { name: 'strokeRed', label: 'stroke green' }),
+        layerField(layer, { name: 'strokeRed', label: 'stroke blue' }),
+        layerField(layer, { name: 'strokeRed', label: 'stroke alpha' }),
+        layerField(layer, { name: 'strokeRed', label: 'stroke width' })
       ]
     }),
 
@@ -154,12 +150,26 @@ function layerFields (layer) {
       flag: 'hasRotation',
       name: 'rotation',
       children: [
-        field({ value: layer.props['radians'], label: 'radians', oninput: setProp('radians') }),
-        field({ value: layer.props['rotateX'], label: 'origin X', oninput: setProp('rotateX') }),
-        field({ value: layer.props['rotateY'], label: 'origin Y', oninput: setProp('rotateY') })
+        layerField(layer, { name: 'radians' }),
+        layerField(layer, { name: 'rotateX', label: 'X origin' }),
+        layerField(layer, { name: 'rotateY', label: 'Y origin' })
       ]
     })
   ]
+}
+
+function layerField (layer, { name, label }) {
+  const setProp = (propName) => (ev) => {
+    layer.setProperty(propName, ev.currentTarget.value)
+  }
+  return field({
+    value: layer.props[name],
+    classes: {
+      'b--red': layer.errors[name]
+    },
+    label: label || name,
+    oninput: setProp(name)
+  })
 }
 
 function layerHeader (layer) {
@@ -261,8 +271,15 @@ function parseFunc (str, layer, propName) {
     // This is funky as heck
     const expr = 'with (constants) { return ' + str + '}'
     const func = new Function('i', 'constants', expr) // eslint-disable-line
+    // Turn off the error flag, if present
+    if (layer.errors[propName]) {
+      layer.errors[propName] = false
+      layer._render()
+    }
     return func
   } catch (e) {
+    layer.errors[propName] = true
+    layer._render()
     return function () {}
   }
 }
@@ -270,17 +287,16 @@ function parseFunc (str, layer, propName) {
 function evaluate (layer, propName, idx) {
   if (propName in layer.funcs) {
     // If this property already has an error, do not re-evaluate it
-    /*
-    if (layer.errs[propName]) {
+    if (layer.errors[propName]) {
       return null
     }
-    */
     try {
       // Apply the stored function object
       const result = layer.funcs[propName](idx, layer.canvasState.constants.obj)
       return result
     } catch (e) {
-      layer.errs[propName] = true
+      layer.errors[propName] = true
+      layer._render()
     }
   } else {
     // Not a function; just return the plain value
