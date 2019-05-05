@@ -29,10 +29,10 @@ function CanvasState () {
   const constants = Constants() // Constant values that can be used inside layers
   return Component({
     constants,
-    canvasWidth: 1000,
-    canvasHeight: 1000,
+    canvasWidth: 800,
+    canvasHeight: 800,
     sidebarWidth: 400,
-    fillStyle: 'white',
+    fillStyle: 'black',
     // Collections of shape elements, both accessed by key and ordered.
     layers: {},
     layerOrder: [],

@@ -7,6 +7,7 @@ module.exports = { Layer }
 
 let id = 0
 
+const defaultSize = 100
 const start = window.performance.now()
 window.ts = () => window.performance.now() - start
 
@@ -21,32 +22,33 @@ function Layer (canvasState) {
     // Is the user currently renaming this layer?
     renaming: false,
     // Toggles for whole sections of fields
-    flags: { hasFill: true, hasRotation: false, hasStroke: false },
+    flags: { hasFill: true, hasRotation: false, hasStroke: false, hasSkew: false, hasScale: false },
     // Mark which fields are causing errors so we don't re-eval
     errors: {},
     // Parsed functions for each property
     funcs: {},
     // Input values for each field
     props: {
+      sides: 4,
       copies: 1,
       x: 50,
       y: 50,
-      width: 50,
-      height: 50,
-      fillRed: 0,
+      fillRed: 200,
       fillGreen: 0,
-      fillBlue: 100,
-      fillAlpha: 0.5,
-      strokeRed: 0,
-      strokeGreen: 0,
+      fillBlue: 200,
+      fillAlpha: 1,
+      strokeRed: 200,
+      strokeGreen: 200,
       strokeBlue: 0,
       strokeAlpha: 1,
       strokeWidth: 2,
+      skewVertical: 0,
+      skewHorizontal: 0,
+      scaleVertical: 1,
+      scaleHorizontal: 1,
       radians: 0,
       rotateX: 0,
-      rotateY: 0,
-      scaleX: 1,
-      scaleY: 1
+      rotateY: 0
     },
 
     // Open or close a section of the layer's form
@@ -71,6 +73,7 @@ function Layer (canvasState) {
 
     // Draw a single element among many copies
     drawOne (ctx, idx) {
+      // For reference: ctx.transform(horizScale, vertSkew, horizSkew, vertScale, horizTranslation, vertTranslation)
       let values = {}
       for (let propName in this.props) {
         values[propName] = evaluate(this, propName, idx)
@@ -82,16 +85,22 @@ function Layer (canvasState) {
         ctx.rotate(values.radians)
         ctx.translate(-values.rotateX, -values.rotateY)
       }
-      if (this.flags.hasFill) {
-        ctx.fillStyle = 'rgba(' + values.fillRed + ', ' + values.fillGreen + ', ' + values.fillBlue + ', ' + values.fillAlpha + ')'
-        ctx.fillRect(0, 0, values.width, values.height)
+      if (this.flags.hasSkew || this.flags.hasScale) {
+        let skewY = 0
+        let skewX = 0
+        let scaleX = 1
+        let scaleY = 1
+        if (this.flags.hasSkew) {
+          skewY = values.skewVertical
+          skewX = values.skewHorizontal
+        }
+        if (this.flags.hasScale) {
+          scaleY = values.scaleVertical
+          scaleX = values.scaleHorizontal
+        }
+        ctx.transform(scaleX, skewY, skewX, scaleY, 0, 0)
       }
-      if (this.flags.hasStroke) {
-        const strokeWidth = values.strokeWidth
-        ctx.strokeStyle = 'rgba(' + values.strokeRed + ', ' + values.strokeGreen + ', ' + values.strokeBlue + ', ' + values.strokeAlpha + ')'
-        ctx.lineWidth = strokeWidth
-        ctx.strokeRect(0, 0, values.width, values.height)
-      }
+      drawShape(ctx, values, this.flags)
       ctx.resetTransform()
     },
 
@@ -113,11 +122,52 @@ function Layer (canvasState) {
   })
 }
 
+// Draw a regular polygon
+function drawShape (ctx, values, flags) {
+  if (!flags.hasStroke && !flags.hasFill) return
+  const region = new window.Path2D()
+  const a = (Math.PI * 2) / values.sides
+  region.moveTo(defaultSize, 0)
+  for (let i = 1; i <= values.sides; i++) {
+    /*
+    const cos = Math.cos(i * 2 * Math.PI / values.sides)
+    const sin = Math.sin(i * 2 * Math.PI / values.sides)
+    region.lineTo(defaultSize * cos, defaultSize * sin)
+    */
+    region.lineTo(defaultSize * Math.cos(a * i), defaultSize * Math.sin(a * i))
+  }
+  region.closePath()
+  if (flags.hasFill) {
+    ctx.fillStyle = 'rgba(' + values.fillRed + ', ' + values.fillGreen + ', ' + values.fillBlue + ', ' + values.fillAlpha + ')'
+    ctx.fill(region)
+  }
+  if (flags.hasStroke) {
+    ctx.strokeStyle = 'rgba(' + values.strokeRed + ', ' + values.strokeGreen + ', ' + values.strokeBlue + ', ' + values.strokeAlpha + ')'
+    ctx.lineWidth = values.strokeWidth
+    ctx.stroke(region)
+  }
+}
+
+/*
+if (sides < 3) return;
+var a = (Math.PI * 2)/sides;
+a = anticlockwise?-a:a;
+ctx.save();
+ctx.translate(x,y);
+ctx.rotate(startAngle);
+ctx.moveTo(radius,0);
+for (var i = 1; i < sides; i++) {
+ctx.lineTo(radius*Math.cos(a*i),radius*Math.sin(a*i));
+}
+ctx.closePath();
+ctx.restore();
+}
+*/
+
 function layerFields (layer) {
   return [
     layerField(layer, { name: 'copies' }),
-    layerField(layer, { name: 'width' }),
-    layerField(layer, { name: 'height' }),
+    layerField(layer, { name: 'sides' }),
     layerField(layer, { name: 'x' }),
     layerField(layer, { name: 'y' }),
     // Fill
@@ -138,10 +188,10 @@ function layerFields (layer) {
       name: 'stroke',
       children: [
         layerField(layer, { name: 'strokeRed', label: 'stroke red' }),
-        layerField(layer, { name: 'strokeRed', label: 'stroke green' }),
-        layerField(layer, { name: 'strokeRed', label: 'stroke blue' }),
-        layerField(layer, { name: 'strokeRed', label: 'stroke alpha' }),
-        layerField(layer, { name: 'strokeRed', label: 'stroke width' })
+        layerField(layer, { name: 'strokeGreen', label: 'stroke green' }),
+        layerField(layer, { name: 'strokeBlue', label: 'stroke blue' }),
+        layerField(layer, { name: 'strokeAlpha', label: 'stroke alpha' }),
+        layerField(layer, { name: 'strokeWidth', label: 'stroke width' })
       ]
     }),
 
@@ -153,6 +203,26 @@ function layerFields (layer) {
         layerField(layer, { name: 'radians' }),
         layerField(layer, { name: 'rotateX', label: 'X origin' }),
         layerField(layer, { name: 'rotateY', label: 'Y origin' })
+      ]
+    }),
+
+    // Scale
+    fieldGroup(layer, {
+      flag: 'hasScale',
+      name: 'scale',
+      children: [
+        layerField(layer, { name: 'scaleVertical', label: 'vertical' }),
+        layerField(layer, { name: 'scaleHorizontal', label: 'horizontal' })
+      ]
+    }),
+
+    // Skew
+    fieldGroup(layer, {
+      flag: 'hasSkew',
+      name: 'skew',
+      children: [
+        layerField(layer, { name: 'skewVertical', label: 'vertical' }),
+        layerField(layer, { name: 'skewHorizontal', label: 'horizontal' })
       ]
     })
   ]
