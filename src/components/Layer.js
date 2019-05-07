@@ -31,8 +31,8 @@ function Layer (canvasState) {
     props: {
       sides: 4,
       copies: 1,
-      x: 50,
-      y: 50,
+      x: 100,
+      y: 100,
       fillRed: 200,
       fillGreen: 0,
       fillBlue: 200,
@@ -126,15 +126,18 @@ function Layer (canvasState) {
 function drawShape (ctx, values, flags) {
   if (!flags.hasStroke && !flags.hasFill) return
   const region = new window.Path2D()
-  const a = (Math.PI * 2) / values.sides
-  region.moveTo(defaultSize, 0)
-  for (let i = 1; i <= values.sides; i++) {
-    /*
-    const cos = Math.cos(i * 2 * Math.PI / values.sides)
-    const sin = Math.sin(i * 2 * Math.PI / values.sides)
-    region.lineTo(defaultSize * cos, defaultSize * sin)
-    */
-    region.lineTo(defaultSize * Math.cos(a * i), defaultSize * Math.sin(a * i))
+  if (values.sides >= 30) {
+    // Draw a circle
+    region.arc(0, 0, defaultSize, Math.PI * 2, false)
+  } else {
+    // Draw a regular polygon
+    const a = (Math.PI * 2) / values.sides
+    // Function to compute the i-th vertex in the polygon, either with 'sin' or 'cos'
+    const getPoint = (i, func) => Math.round(defaultSize * Math[func](a * i))
+    region.moveTo(getPoint(0, 'cos'), getPoint(0, 'sin'))
+    for (let i = 1; i <= values.sides; i++) {
+      region.lineTo(getPoint(i, 'cos'), getPoint(i, 'sin'))
+    }
   }
   region.closePath()
   if (flags.hasFill) {
@@ -147,22 +150,6 @@ function drawShape (ctx, values, flags) {
     ctx.stroke(region)
   }
 }
-
-/*
-if (sides < 3) return;
-var a = (Math.PI * 2)/sides;
-a = anticlockwise?-a:a;
-ctx.save();
-ctx.translate(x,y);
-ctx.rotate(startAngle);
-ctx.moveTo(radius,0);
-for (var i = 1; i < sides; i++) {
-ctx.lineTo(radius*Math.cos(a*i),radius*Math.sin(a*i));
-}
-ctx.closePath();
-ctx.restore();
-}
-*/
 
 function layerFields (layer) {
   return [

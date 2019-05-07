@@ -27,7 +27,7 @@ function App () {
 
 function CanvasState () {
   const constants = Constants() // Constant values that can be used inside layers
-  return Component({
+  const cs = Component({
     constants,
     canvasWidth: 800,
     canvasHeight: 800,
@@ -163,6 +163,8 @@ function CanvasState () {
       ])
     }
   })
+  cs.addLayer(Layer(cs))
+  return cs
 }
 
 // Field element for canvas width, height, fill, etc
