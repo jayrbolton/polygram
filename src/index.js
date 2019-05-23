@@ -8,6 +8,8 @@ const { Constants } = require('./components/Constants')
 const button = require('./components/button')
 const fieldset = require('./components/fieldset')
 
+const HELP_LINK = 'https://github.com/jayrbolton/polygram/blob/master/HELP.md'
+
 function App () {
   // State of the drawing, including all the sidebar option fields.
   const canvasState = CanvasState()
@@ -113,7 +115,12 @@ function CanvasState () {
         h('div.flex.justify-end', [
           button({ on: { click: () => this.shareState() } }, 'Share'),
           button({ on: { click: () => this.openModal.open() } }, 'Open'),
-          button({}, 'Help!')
+          button({
+            props: {
+              href: HELP_LINK,
+              target: '_blank'
+            }
+          }, 'Help!', 'a')
         ]),
         h('label.b.db.code', 'canvas'),
         h('div.flex.justify-between', [

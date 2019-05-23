@@ -124,7 +124,10 @@ function Layer (canvasState) {
 
 // Draw a regular polygon
 function drawShape (ctx, values, flags) {
-  if (!flags.hasStroke && !flags.hasFill) return
+  if (!flags.hasStroke && !flags.hasFill) {
+    // Invisible, so nothing to draw.
+    return
+  }
   const region = new window.Path2D()
   if (values.sides >= 30) {
     // Draw a circle

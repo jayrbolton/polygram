@@ -1,8 +1,5 @@
 - error states on fields anywhere in canvas state (just red border)
 - have undo action for removing constants
+- have scaling not stretch the stroke width (scale in the drawShape function only?)
+- Fix Math.PI usage in radians field (?)
 - (??) maybe get rid of undo action on adding a layer
-
-- ++ allow more shapes than rect
-  - dropdown for "shape"
-  - size only
-  - add skew section
