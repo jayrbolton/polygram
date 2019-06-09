@@ -19,7 +19,7 @@ function App () {
     canvasState,
     canvas,
     view () {
-      return h('div', [
+      return h('div.flex', [
         this.canvasState.view(),
         this.canvas.view()
       ])
@@ -152,7 +152,7 @@ function CanvasState () {
             mousedown: () => {
               const mousemove = ev => {
                 const xPos = ev.clientX
-                if (xPos > 200 && xPos < 1000) {
+                if (xPos > 300 && xPos < 1000) {
                   this.sidebarWidth = xPos
                   this.elm.style.left = this.sidebarWidth + 10 + 'px'
                   this._render()
@@ -230,18 +230,52 @@ function shareModalContent (canvasState) {
 
 function Canvas (canvasState) {
   return Component({
+    isCapturing: false,
+    video: document.createElement('video'),
+
+    toggleCapture () {
+      this.isCapturing ? this.stopCapture() : this.startCapture()
+    },
+
+    startCapture () {
+      if (!window.MediaRecorder || !window.MediaRecorder.isTypeSupported('video/webm')) {
+        window.alert('Video recording is not supported in your browser. Try Firefox or Chrome instead.')
+        return
+      }
+      this.mediaRecorder = new window.MediaRecorder(this.canvas.captureStream(60), {
+        mimeType: 'video/webm'
+      })
+      this.mediaRecorder.ondataavailable = ev => {
+        const link = document.createElement('a')
+        link.style.display = 'none'
+        const downloadUrl = window.URL.createObjectURL(ev.data)
+        link.href = downloadUrl
+        link.download = 'polygram.webm'
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      }
+      this.mediaRecorder.start()
+      this.isCapturing = true
+      this._render()
+    },
+
+    stopCapture () {
+      this.mediaRecorder.stop()
+      this.isCapturing = false
+      this._render()
+    },
+
     view () {
-      return h('canvas.fixed.top-0', {
-        style: {
-          left: canvasState.sidebarWidth + 10 + 'px'
-        },
-        props: {
-          id: 'tutorial'
-        },
+      const canvas = h('canvas', {
+        props: { id: 'tutorial' },
         hook: {
           insert: (vnode) => {
             const elm = vnode.elm
+            const canvasCmp = this
+            // Assign to both CanvasState and Canvas components to give access to this canvas elem
             canvasState.elm = elm
+            canvasCmp.canvas = elm
             elm.width = canvasState.canvasWidth
             elm.height = canvasState.canvasHeight
             const ctx = elm.getContext('2d')
@@ -258,9 +292,24 @@ function Canvas (canvasState) {
               window.requestAnimationFrame(draw)
             }
             draw()
+            this.video.setAttribute('playsinline', '')
+            this.video.setAttribute('autoplay', '')
+            this.video.className = 'fixed top-2 right-0'
+            document.body.appendChild(this.video)
           }
         }
       })
+      return h('div.pl3', [
+        h('div.tr.pv1', [
+          h('span.mr1.color--black-40.code', [
+            this.isCapturing ? 'Recording...' : ''
+          ]),
+          button({
+            on: { click: () => this.toggleCapture() }
+          }, this.isCapturing ? 'Stop & save' : 'Record canvas', 'a')
+        ]),
+        canvas
+      ])
     }
   })
 }

@@ -15,7 +15,6 @@
     "tinyify": "^2.5.0"
   },
   "dependencies": {
-    "ccapture.js": "^1.1.0",
     "pako": "^1.0.10",
     "uzu": "0.4.0"
   }
