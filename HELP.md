@@ -1,6 +1,6 @@
 # Polygram Guide
 
-Polygram is an app for creating interesting 2d imagery by simply tweaking a set of fields in the sidebar. Any changes to a field you make are immediately reflected in the drawing. The app is all about combinations: the coolest animations are discovered by playing with new **combinations** of parameters.
+Polygram is an app for creating interesting 2d imagery by tweaking a set of fields in the sidebar. Any changes to a field you make are immediately reflected in the drawing. The app is all about combinations: the coolest animations are discovered by playing with the interaction of different fields and functions.
 
 Before starting, check that hardware acceleration for graphics in your browser is enabled. In Firefox or Chrome, it should be enabled by default.
 * [Enabling hardware acceleration in Chrome](https://www.howtogeek.com/412738/how-to-turn-hardware-acceleration-on-and-off-in-chrome/)
@@ -9,9 +9,9 @@ Before starting, check that hardware acceleration for graphics in your browser i
 
 A "layer" in polygram represents a collection of the same repeated shapes, such as a circle, triangle, or square. The shape is always defined as a regular polygon (line, triangle, square, pentagon, hexagon, etc), but the shape can be stretched and skewed as you please.
 
-The shape in a layer starts out as a single copy, but you can tweak the "copies" field to have the shape repeat.
+The shape in a layer starts out as a single copy, but you can tweak the "copies" field to have the shape repeat in the canvas.
 
-Every field represents a numeric value. In addition to simple numbers, every field can be written as a **javascript expression** that gets re-evaluated on every frame of the animation.
+Every form field under a layer represents a numeric value. In addition to simple numbers, every field can be written as a **javascript expression** that gets re-evaluated on every frame of the animation.
 
 The fields for a layer are:
 
@@ -46,6 +46,8 @@ The fields for a layer are:
 The section labeled "constants" is for defining plain numbers that you want to re-use in any fields in your layers.
 
 For example, you might define a "speed" constant for controlling the speed of the animation, which is reused in several places in your layers. When you tweak this constant, your fields will all be instantly updated to use the new value, similar to a spreadsheet.
+
+Note that you can't use javascript functions in a constant field, only plain numbers.
 
 ## Special functions and variables
 
@@ -86,7 +88,7 @@ Play with all these math functions or constants in your animations to discover i
 
 You can share polygrams by clicking the "Share" button, which gives you a long URL that you can send to others. When someone else uses that URL, your drawing will be shown.
 
-When you click the "Share" button, the state of your drawing gets dumped into the URL of the page. In order to document all your drawings, you can save your URLs in a document somewhere.
+When you click the "Share" button, the state of your drawing gets dumped into the URL of the page. You can use that URL to save your drawing for later, such as by pasting it into a document.
 
 # Howtos
 
@@ -101,6 +103,32 @@ When you click the "Share" button, the state of your drawing gets dumped into th
 * To change the width of the line, increase the `stroke width` field.
 
 ## Animate properties of a shape in different ways
+
+Use the `ts()` function for animation.
+
+### Rotation
+
+1. Start a new polygram by going [here](https://jayrbolton.github.io/polygram)
+1. Check the `rotation` box.
+1. Enter `0.001 * ts()` as the value for the `radians` field.
+
+### Movement
+
+Using `ts()` alone doesn't work well for x and y coordinate animations, because it grows indefinitely, causing your shapes to travel off the screen. To prevent this, we can combine the `ts()` function with a function such as `Math.sin` or module (`%`) to keep your values within a certain boundary.
+
+1. Start a new polygram by going [here](https://jayrbolton.github.io/polygram)
+1. In the `x` field, enter `300 + Math.sin(0.005 * ts()) * 50`.
+   - The `300` represents the starting point, while `0.005` represents the speed and `50` represents the range.
+1. In the `y` field, enter `300 + Math.sin(0.01 * ts()) * 50`.
+
+### Opacity
+
+Opacity can be animated by repeating values between 0 and 1.
+
+1. Start a new polygram by going [here](https://jayrbolton.github.io/polygram)
+1. In the `fill alpha` field, enter `(ts() * 0.001) % 1`.
+
+This equation rises from 0 to 1 linearly and then resets to 0. You can also use `Math.abs(Math.sin(ts() * 0.001))`, for example, for a different effect. 
 
 ## Draw a grid of squares
 
@@ -124,7 +152,7 @@ We want to translate the above values into the x and y coordinates below:
 
 Each pair of numbers in brackets is a square in the grid. The first number is the x coordinate, while the second number is the y coordinate.
 
-For the `x` value, we can use `i % 3`. This gives us 0, 1, 2, repeating.
+For calculating the `x` value of each square from `i`, we can use `i % 3`. This gives us 0, 1, 2, repeating.
 
 For the `y` value, we can use `Math.floor(i / 3)`. This gives us `0` for the first three `i` values (0, 1, 2), then `1` for the second three `i` values (3, 4, 5), and then `2` for the last three (6, 7, 8).
 
@@ -133,7 +161,7 @@ To add spacing between each square, use a multiplier such as `i % 3 * 200` and `
 To offset the entire grid from the top or bottom of the canvas, add a constant such as `i % 3 * 200 + 100` and `Math.floor(i / 3) * 200 + 100`.
 
 1. Start a new polygram by going [here](https://jayrbolton.github.io/polygram)
-1. Change the "Copies" field to `10`.
+1. Change the "Copies" field to `9`.
 1. Change the "x" field to `i % 3 * 200 + 100`
 1. Change the "y" field to `Math.floor(i / 3) * 200 + 100`
 

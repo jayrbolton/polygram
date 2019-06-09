@@ -28,9 +28,7 @@ function App () {
 }
 
 function CanvasState () {
-  const constants = Constants() // Constant values that can be used inside layers
   const cs = Component({
-    constants,
     canvasWidth: 800,
     canvasHeight: 800,
     sidebarWidth: 400,
@@ -56,6 +54,7 @@ function CanvasState () {
       if (this.forwardActions.length) {
         this.forwardActions = []
       }
+      this._render()
     },
 
     // Add a new layer to the canvas state
@@ -113,6 +112,8 @@ function CanvasState () {
           content: shareModalContent(this)
         }),
         h('div.flex.justify-end', [
+          undoButton(this),
+          redoButton(this),
           button({ on: { click: () => this.shareState() } }, 'Share'),
           button({ on: { click: () => this.openModal.open() } }, 'Open'),
           button({
@@ -128,12 +129,11 @@ function CanvasState () {
           canvasOptionField(this.canvasHeight, 'height', 'number', h => this.changeCanvasHeight(h)),
           canvasOptionField(this.fillStyle, 'color', 'text', fs => this.changeFillStyle(fs))
         ]),
-        h('div', [
-          newLayerButton(this),
-          undoButton(this),
-          redoButton(this)
+        this.constants ? h('div', this.constants.view()) : '',
+        h('div.flex.justify-between.items-center.mt4.pt2.bt.bw-2.b--black-20', [
+          h('span.code', layers.length + ' ' + (layers.length > 1 ? 'layers' : 'layer')),
+          newLayerButton(this)
         ]),
-        h('div', this.constants.view()),
         h('div', layers),
         // right-side pull bar
         h('div', {
@@ -171,6 +171,7 @@ function CanvasState () {
     }
   })
   cs.addLayer(Layer(cs))
+  cs.constants = Constants(cs) // Constant values that can be used inside layers
   return cs
 }
 
@@ -272,15 +273,17 @@ function newLayerButton (canvasState) {
         // Create and append a new layer, saving undo/redo history actions for it
         const layer = Layer(canvasState)
         // For undo/redo actions
+        /*
         canvasState.pushToHistory({
           name: 'new-layer',
           backwards: () => canvasState.removeLayer(layer),
           forwards: () => canvasState.addLayer(layer)
         })
+        */
         canvasState.addLayer(layer)
       }
     }
-  }, 'Add layer')
+  }, '+ Layer')
 }
 
 function undoButton (canvasState) {

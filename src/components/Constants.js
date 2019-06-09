@@ -9,9 +9,10 @@ const button = require('./button')
 // For assigning a unique name to new constants
 let id = 0
 
-function Constants () {
+function Constants (canvasState) {
   const initialConst = { name: 'c', value: 100 }
   return Component({
+    canvasState,
     // Array and object for keeping the order and hashtable of the constants
     // keys are names and values are number values
     obj: { [initialConst.name]: initialConst.value },
@@ -54,8 +55,21 @@ function Constants () {
     },
 
     removeConstant (name) {
-      delete this.obj[name]
-      this.arr = this.arr.filter(n => n !== name)
+      const val = this.obj[name]
+      const remove = () => {
+        delete this.obj[name]
+        this.arr = this.arr.filter(n => n !== name)
+      }
+      const readd = () => {
+        this.obj[name] = val
+        this.arr.push(name)
+      }
+      this.canvasState.pushToHistory({
+        name: 'remove-constant',
+        backwards: readd,
+        forwards: remove
+      })
+      remove()
       this._render()
     },
 

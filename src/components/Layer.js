@@ -108,7 +108,7 @@ function Layer (canvasState) {
     setProperty (propName, value) {
       this.props[propName] = value
       this.funcs[propName] = parseFunc(value, this, propName)
-      window.funcs = this.funcs
+      this._render()
     },
 
     view () {
@@ -218,6 +218,7 @@ function layerFields (layer) {
   ]
 }
 
+// An individual field input, such as copies, x, y, etc.
 function layerField (layer, { name, label }) {
   const setProp = (propName) => (ev) => {
     layer.setProperty(propName, ev.currentTarget.value)
@@ -225,13 +226,15 @@ function layerField (layer, { name, label }) {
   return field({
     value: layer.props[name],
     classes: {
-      'b--red': layer.errors[name]
+      'b--red': layer.errors[name],
+      'bw2': layer.errors[name]
     },
     label: label || name,
     oninput: setProp(name)
   })
 }
 
+// The header for the entire layer area
 function layerHeader (layer) {
   // Wrapper element for the header
   const div = cs => h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between.items-center', cs)
@@ -276,6 +279,7 @@ function layerHeader (layer) {
   ])
 }
 
+// The button for renaming the layer
 function renameButton (canvasState, layer) {
   return button({
     on: {
@@ -291,23 +295,22 @@ function renameButton (canvasState, layer) {
 function copyButton (canvasState, layer) {
   return button({
     on: {
-      click: () => {
-        const newLayer = Layer(canvasState)
-        const props = Object.assign({}, layer.props)
-        const flags = Object.assign({}, layer.flags)
-        newLayer.props = props
-        newLayer.flags = flags
-        canvasState.pushToHistory({
-          name: 'copy-layer',
-          backwards: () => canvasState.removeLayer(newLayer),
-          forwards: () => canvasState.addLayer(newLayer)
-        })
-        canvasState.addLayer(newLayer)
-      }
+      click: () => copyLayer(canvasState, layer)
     }
   }, 'Copy')
 }
 
+function copyLayer (canvasState, layer) {
+  const newLayer = Layer(canvasState)
+  newLayer.props = Object.assign({}, layer.props)
+  newLayer.flags = Object.assign({}, layer.flags)
+  newLayer.funcs = Object.assign({}, layer.funcs)
+  newLayer.errors = Object.assign({}, layer.errors)
+  canvasState.addLayer(newLayer)
+}
+
+// Remove the layer
+// Pushes to the undo/redo history
 // Takes the full app component, plus a single element
 function removeButton (canvasState, layer) {
   return button({
@@ -332,18 +335,15 @@ function parseFunc (str, layer, propName) {
     const expr = 'with (constants) { return ' + str + '}'
     const func = new Function('i', 'constants', expr) // eslint-disable-line
     // Turn off the error flag, if present
-    if (layer.errors[propName]) {
-      layer.errors[propName] = false
-      layer._render()
-    }
+    delete layer.errors[propName]
     return func
   } catch (e) {
     layer.errors[propName] = true
-    layer._render()
-    return function () {}
+    return null
   }
 }
 
+// Evaluate the parsed function for a given property in the layer
 function evaluate (layer, propName, idx) {
   if (propName in layer.funcs) {
     // If this property already has an error, do not re-evaluate it
@@ -364,8 +364,11 @@ function evaluate (layer, propName, idx) {
   }
 }
 
+// The header and wrapper for a grouping of layer inputs such as "rotation"
+// Collapses when the top-level check box is deselected
 function fieldGroup (layer, opts) {
   const { flag, name, children } = opts
+  // Unique ID for the html `for` and `id` attrs
   const htmlID = 'field-flag-' + layer.id + '-' + flag
   const isOpen = layer.flags[flag]
   return h('div.bl.bw2.pl1.pb1.mb2', {

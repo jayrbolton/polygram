@@ -44,7 +44,9 @@ function Modal () {
             h('h1.f4.ma0', [
               title
             ]),
-            button('Close', () => this.close())
+            button({
+              on: { click: () => this.close() }
+            }, 'Close')
           ]),
           h('div.pa3', [
             content
