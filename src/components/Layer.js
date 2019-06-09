@@ -166,8 +166,8 @@ function layerFields (layer) {
       name: 'fill',
       children: [
         layerField(layer, { name: 'fillRed', label: 'fill red' }),
-        layerField(layer, { name: 'fillBlue', label: 'fill blue' }),
         layerField(layer, { name: 'fillGreen', label: 'fill green' }),
+        layerField(layer, { name: 'fillBlue', label: 'fill blue' }),
         layerField(layer, { name: 'fillAlpha', label: 'fill alpha' })
       ]
     }),

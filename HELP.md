@@ -165,6 +165,14 @@ To offset the entire grid from the top or bottom of the canvas, add a constant s
 1. Change the "x" field to `i % 3 * 200 + 100`
 1. Change the "y" field to `Math.floor(i / 3) * 200 + 100`
 
+## Converting .webm recordings to .mp4
+
+Polygram can record the canvas to a webm video. To convert this video to an mp4, install `ffmpeg` (`brew install ffmpeg` on mac or `apt install ffmpeg` on Ubuntu). Then run:
+
+```sh
+ffmpeg -i polygram.webm -qscale 0 polygram.mp4
+```
+
 # Examples
 
 * [Shimmering circles](https://jayrbolton.github.io/polygram/#eJxtkU1rwzAMhv+KEQzSzeucjo7i23bYdtmlg30QenATh5iaONguXVf63yc7btPSHYL1vpKlJ/IONsBnjFFo0lk74LDUolwBhRJFUYDrRClRPjBY0AJK0ynpUOcMjQUFGcp2UAPfQSPcs9IaeC20kzToufHCK9Oeeu/empUE7u06GSu5OSsohU75PYUutHaqCpPgngW0HoIPND8oFLkiOSPXJCKTGxIQKWwx9SZ8M661MTZT5A4To4uyGsHnsgI+iZtA9WKlRO6knvRaniQfddcI7DyeTPGyi38UrwM76tQAJtOhpm9zZh1aRUixdFkMnGoz77IAysaMsRwDNRodb32qyuO7wSzOwwV+SOsVLi4SB+PVWPVrWn+wwlKHIiSHZJ4W9rYVlRJt2HCcncYnHIXff4h5gLPhveVXnNjH3xjjK4ZFaLGV9pbBfrH/A7dDvT8=)

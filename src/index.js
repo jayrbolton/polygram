@@ -230,13 +230,16 @@ function shareModalContent (canvasState) {
 
 function Canvas (canvasState) {
   return Component({
+    canvasState,
     isCapturing: false,
     video: document.createElement('video'),
 
+    // Dumb toggle on play/pause of the canvas record feature.
     toggleCapture () {
       this.isCapturing ? this.stopCapture() : this.startCapture()
     },
 
+    // Start recording video of the canvas.:w
     startCapture () {
       if (!window.MediaRecorder || !window.MediaRecorder.isTypeSupported('video/webm')) {
         window.alert('Video recording is not supported in your browser. Try Firefox or Chrome instead.')
@@ -260,6 +263,8 @@ function Canvas (canvasState) {
       this._render()
     },
 
+    // Stop and save the canvas recording as a webm video.
+    // Most of the actual video save logic is found in the ondataavailable event listener above.
     stopCapture () {
       this.mediaRecorder.stop()
       this.isCapturing = false
@@ -267,15 +272,14 @@ function Canvas (canvasState) {
     },
 
     view () {
+      const leftPad = this.canvasState ? this.canvasState.sidebarWidth + 20 + 'px' : '400px'
       const canvas = h('canvas', {
         props: { id: 'tutorial' },
         hook: {
           insert: (vnode) => {
             const elm = vnode.elm
-            const canvasCmp = this
             // Assign to both CanvasState and Canvas components to give access to this canvas elem
             canvasState.elm = elm
-            canvasCmp.canvas = elm
             elm.width = canvasState.canvasWidth
             elm.height = canvasState.canvasHeight
             const ctx = elm.getContext('2d')
@@ -299,7 +303,7 @@ function Canvas (canvasState) {
           }
         }
       })
-      return h('div.pl3', [
+      return h('div.fixed.top-0', { style: { left: leftPad } }, [
         h('div.tr.pv1', [
           h('span.mr1.color--black-40.code', [
             this.isCapturing ? 'Recording...' : ''
