@@ -1,1 +1,2 @@
 - ability to reorder layers
+- ability to record the canvas 
