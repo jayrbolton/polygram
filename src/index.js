@@ -280,6 +280,7 @@ function Canvas (canvasState) {
             const elm = vnode.elm
             // Assign to both CanvasState and Canvas components to give access to this canvas elem
             canvasState.elm = elm
+            this.canvas = elm
             elm.width = canvasState.canvasWidth
             elm.height = canvasState.canvasHeight
             const ctx = elm.getContext('2d')
