@@ -245,7 +245,7 @@ function Canvas (canvasState) {
         window.alert('Video recording is not supported in your browser. Try Firefox or Chrome instead.')
         return
       }
-      this.mediaRecorder = new window.MediaRecorder(this.canvas.captureStream(60), {
+      this.mediaRecorder = new window.MediaRecorder(this.canvas.captureStream(), {
         mimeType: 'video/webm'
       })
       this.mediaRecorder.ondataavailable = ev => {

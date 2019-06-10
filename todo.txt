@@ -1,2 +1,4 @@
 - ability to reorder layers
-- ability to record the canvas 
+- make some plans to clean up some of the ui button layout
+- figure out how to record high quality 14.9 mb gifs for sharing
+    (gifjs?)
