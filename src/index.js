@@ -9,6 +9,7 @@ function App () {
   const canvasState = CanvasState()
   // The actual canvas element, which wraps the draw() function
   const canvas = Canvas(canvasState)
+  canvasState.canvas = canvas
   return Component({
     canvasState,
     canvas,

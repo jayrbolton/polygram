@@ -150,6 +150,7 @@ function CanvasState () {
                 if (xPos > 300 && xPos < 1000) {
                   this.sidebarWidth = xPos
                   this._render()
+                  this.canvas._render()
                 }
               }
               const mouseup = ev => {
