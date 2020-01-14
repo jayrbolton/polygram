@@ -1,4 +1,4 @@
-# polygram
+# [polygram - interactive canvas animations](https://jayrbolton.github.io/polygram)
 
 :black_small_square:
 :black_small_square:
