@@ -1,19 +1,25 @@
 # polygram
 
-## CLI Commands
-*   `npm install`: Installs dependencies
+:black_small_square:
+:black_small_square:
+:black_medium_small_square:
+:black_medium_small_square:
+:black_medium_square:
+:black_medium_square:
+:black_large_square:
+:black_large_square:
+:black_medium_square:
+:black_medium_square:
+:black_medium_small_square:
+:black_medium_small_square:
+:black_small_square:
+:black_small_square:
 
-*   `npm run start`: Runs `serve` or `dev`, depending on `NODE_ENV` value. Defaults to `dev server`
+## Development
 
-*   `npm run dev`: Run a development, HMR server
+Run the dev server with:
 
-*   `npm run serve`: Run a production-like server
-
-*   `npm run build`: Production-ready build
-
-*   `npm run lint`: Pass TypeScript files using TSLint
-
-*   `npm run test`: Run Jest and [`preact-render-spy`](https://github.com/mzgoddard/preact-render-spy) for your tests
-
-
-For detailed explanation on how things work, checkout the [CLI Readme](https://github.com/developit/preact-cli/blob/master/README.md).
+```sh
+npm i
+npm run dev
+```

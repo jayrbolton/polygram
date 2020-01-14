@@ -1,0 +1,3 @@
+- Make some kind of logo
+    - Get proper favicons and other images
+- get canvas settings working
