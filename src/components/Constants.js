@@ -5,6 +5,7 @@
 const { Component, h } = require('uzu')
 
 const button = require('./button')
+const input = require('./input')
 
 // For assigning a unique name to new constants
 let id = 0
@@ -76,8 +77,8 @@ function Constants (canvasState) {
     view () {
       const inputs = this.arr.map((name, idx) => {
         const value = this.obj[name]
-        return h('div.flex', [
-          h('input.w-30.code.f6.pa1', {
+        return h('div.flex.w-100', [
+          input({
             class: {
               'b--red': this.errors[name]
             },
@@ -85,16 +86,22 @@ function Constants (canvasState) {
               type: 'text',
               value: name || ''
             },
+            style: {
+              width: '7rem'
+            },
             on: {
               input: ev => {
                 this.setConstName(name, ev.currentTarget.value, idx)
               }
             }
           }),
-          h('input.w-70.code.f6.pa1', {
+          input({
             props: {
               type: 'text',
               value: value || ''
+            },
+            style: {
+              width: '7rem'
             },
             on: {
               input: ev => {
@@ -102,14 +109,15 @@ function Constants (canvasState) {
               }
             }
           }),
-          button({
-            on: { click: () => this.removeConstant(name) }
-          }, 'X')
+          button('button', {
+            on: { click: () => this.removeConstant(name) },
+            class: {f7: true}
+          }, 'Remove')
         ])
       })
       return h('div', [
         h('div.flex.justify-between.items-center', [
-          h('span.code.b.pointer', {
+          h('span.b.pointer.sans-serif.white-90', {
             on: {
               click: () => {
                 this.isOpen = !this.isOpen
@@ -117,10 +125,10 @@ function Constants (canvasState) {
               }
             }
           }, [
-            h('span.mr1.black-60', this.isOpen ? '−' : '+'),
-            'constants'
+            h('span.mr1', this.isOpen ? '▲' : '▼'),
+            'Constants'
           ]),
-          button({
+          button('button', {
             on: { click: ev => this.appendConstant() }
           }, '+ Constant')
         ]),

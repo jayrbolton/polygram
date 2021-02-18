@@ -14,7 +14,7 @@ function App () {
     canvasState,
     canvas,
     view () {
-      return h('div.flex', [
+      return h('div.flex.bg-black-80', [
         this.canvasState.view(),
         this.canvas.view()
       ])

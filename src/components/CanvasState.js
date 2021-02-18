@@ -6,6 +6,7 @@ const { Modal } = require('./Modal')
 const { Layer } = require('./Layer')
 const button = require('./button')
 const fieldset = require('./fieldset')
+const input = require('./input')
 
 const HELP_LINK = 'https://github.com/jayrbolton/polygram/blob/master/HELP.md'
 
@@ -91,7 +92,7 @@ function CanvasState () {
     // Left sidepanel for controlling the state of the canvas
     view () {
       const layers = this.layerOrder.map(layer => layer.view())
-      return h('div.pv2.pl2.pr3.relative', {
+      return h('div.pv2.pl2.pr3.relative.bg-black-40.z-1', {
         style: { width: this.sidebarWidth + 'px' }
       }, [
         this.openModal.view({
@@ -105,9 +106,9 @@ function CanvasState () {
         h('div.flex.justify-end', [
           undoButton(this),
           redoButton(this),
-          button({ on: { click: () => this.shareState() } }, 'Share'),
-          button({ on: { click: () => this.openModal.open() } }, 'Open'),
-          button({
+          button('button', { on: { click: () => this.shareState() } }, 'Share'),
+          button('button', { on: { click: () => this.openModal.open() } }, 'Open'),
+          button('button', {
             props: {
               href: HELP_LINK,
               target: '_blank'
@@ -115,53 +116,21 @@ function CanvasState () {
           }, 'Help!', 'a')
         ]),
         // Canvas options section
-        h('label.b.db.code', 'canvas'),
+        h('label.b.db.sans-serif.white-90.f5', 'Canvas'),
         h('div.flex.justify-between', [
-          canvasOptionField(this.canvasWidth, 'width', 'number', w => this.changeCanvasWidth(w)),
-          canvasOptionField(this.canvasHeight, 'height', 'number', h => this.changeCanvasHeight(h)),
-          canvasOptionField(this.fillStyle, 'color', 'text', fs => this.changeFillStyle(fs))
+          canvasOptionField(this.canvasWidth, 'Width', 'number', w => this.changeCanvasWidth(w)),
+          canvasOptionField(this.canvasHeight, 'Height', 'number', h => this.changeCanvasHeight(h)),
+          canvasOptionField(this.fillStyle, 'Color', 'text', fs => this.changeFillStyle(fs))
         ]),
         // Constant values
         this.constants ? h('div', this.constants.view()) : '',
         // Layers header
         h('div.flex.justify-between.items-center.mt4.pt2.bt.bw-2.b--black-20', [
-          h('span.code', layers.length + ' ' + (layers.length > 1 ? 'layers' : 'layer')),
+          h('span.sans-serif.white-80', layers.length + ' ' + (layers.length > 1 ? 'layers' : 'layer')),
           newLayerButton(this)
         ]),
         // All layer components
-        h('div', layers),
-        // right-side pull bar
-        h('div', {
-          style: {
-            position: 'absolute',
-            height: '100%',
-            width: '10px',
-            background: 'black',
-            borderRight: '4px solid gray',
-            top: '0px',
-            right: '0px',
-            zIndex: '0',
-            cursor: 'col-resize'
-          },
-          on: {
-            mousedown: () => {
-              const mousemove = ev => {
-                const xPos = ev.clientX
-                if (xPos > 300 && xPos < 1000) {
-                  this.sidebarWidth = xPos
-                  this._render()
-                  this.canvas._render()
-                }
-              }
-              const mouseup = ev => {
-                document.body.removeEventListener('mouseup', mouseup)
-                document.body.removeEventListener('mousemove', mousemove)
-              }
-              document.body.addEventListener('mouseup', mouseup)
-              document.body.addEventListener('mousemove', mousemove)
-            }
-          }
-        })
+        h('div', layers)
       ])
     }
   })
@@ -216,7 +185,7 @@ function openModalContent (canvasState) {
     }, [
       h('p', 'Paste a polygram link:'),
       h('textarea.w-100', { props: { rows: 4 } }),
-      button({}, 'Load')
+      button('button', {}, 'Load')
     ])
   ])
 }
@@ -238,7 +207,7 @@ function shareModalContent (canvasState) {
 }
 
 function undoButton (canvasState) {
-  return button({
+  return button('button', {
     props: {
       disabled: !canvasState.backwardActions.length
     },
@@ -254,7 +223,7 @@ function undoButton (canvasState) {
 }
 
 function redoButton (canvasState) {
-  return button({
+  return button('button', {
     props: {
       disabled: !canvasState.forwardActions.length
     },
@@ -270,11 +239,11 @@ function redoButton (canvasState) {
 }
 
 // Field element for canvas width, height, fill, etc
-function canvasOptionField (val, label, inputType, onchange) {
+function canvasOptionField (value, label, type, onchange) {
   return fieldset([
-    h('label.code', { css: { root: ['font-family: mono'] } }, label),
-    h('input.code.f6.pa1.w-100', {
-      props: { type: inputType, value: val },
+    h('label.sans-serif.white-80.db.mb1.mt2.f6', { css: { root: ['font-family: mono'] } }, label),
+    input({
+      props: { type, value },
       on: {
         input: ev => {
           const newval = ev.currentTarget.value
@@ -287,7 +256,7 @@ function canvasOptionField (val, label, inputType, onchange) {
 
 // Create a new shape
 function newLayerButton (canvasState) {
-  return button({
+  return button('button', {
     on: {
       click: () => {
         // Create and append a new layer, saving undo/redo history actions for it
@@ -320,7 +289,7 @@ function restoreJson (json, canvasState) {
   layers.forEach(layerData => {
     const layer = Layer(canvasState)
     const props = layerData.p
-    for (let propName in props) {
+    for (const propName in props) {
       layer.setProperty(propName, props[propName])
     }
     layer.flags = layerData.f

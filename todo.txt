@@ -1,4 +1,6 @@
-- ability to reorder layers
-- make some plans to clean up some of the ui button layout
-- figure out how to record high quality 14.9 mb gifs for sharing
-    (gifjs?)
+- remove uzu and convert to plain js
+- remove npm packaging and use pako.min.js
+- add start splash screen to start with examples with screenshots, or blank
+- remove url sharing and instead just use the packed text
+- remove controls resizing
+- clean up controls design

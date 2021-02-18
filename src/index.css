@@ -1,1 +1,50 @@
 @import "tachyons";
+
+/* Remove number input styling */
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+.gray1--bg {
+    background: #2b2b2b;
+}
+.gray1--color {
+    color: #2b2b2b;
+}
+
+.gray2--bg {
+    background: #2b2b2b;
+}
+.gray2--color {
+    color: #2b2b2b;
+}
+
+.gray3--bg {
+    background: #4d4d4d;
+}
+.gray3--color {
+    background: #4d4d4d;
+}
+
+.gray4--bg {
+    background: #5e5e5e;
+}
+.gray4--color {
+    background: #5e5e5e;
+}
+
+.gray5--bg {
+    background: #d9d9d9;
+}
+.gray5--color {
+    background: #d9d9d9;
+}
+

@@ -2,6 +2,7 @@ const { Component, h } = require('uzu')
 
 const field = require('./field')
 const button = require('./button')
+const input = require('./input')
 
 module.exports = { Layer }
 
@@ -74,8 +75,8 @@ function Layer (canvasState) {
     // Draw a single element among many copies
     drawOne (ctx, idx) {
       // For reference: ctx.transform(horizScale, vertSkew, horizSkew, vertScale, horizTranslation, vertTranslation)
-      let values = {}
-      for (let propName in this.props) {
+      const values = {}
+      for (const propName in this.props) {
         values[propName] = evaluate(this, propName, idx)
       }
       const { x, y } = values
@@ -156,39 +157,39 @@ function drawShape (ctx, values, flags) {
 
 function layerFields (layer) {
   return [
-    layerField(layer, { name: 'copies' }),
-    layerField(layer, { name: 'sides' }),
-    layerField(layer, { name: 'x' }),
-    layerField(layer, { name: 'y' }),
+    layerField(layer, { name: 'copies', label: 'Copies' }),
+    layerField(layer, { name: 'sides', label: 'Sides' }),
+    layerField(layer, { name: 'x', label: 'X Position' }),
+    layerField(layer, { name: 'y', label: 'Y Position' }),
     // Fill
     fieldGroup(layer, {
       flag: 'hasFill',
-      name: 'fill',
+      name: 'Fill',
       children: [
-        layerField(layer, { name: 'fillRed', label: 'fill red' }),
-        layerField(layer, { name: 'fillGreen', label: 'fill green' }),
-        layerField(layer, { name: 'fillBlue', label: 'fill blue' }),
-        layerField(layer, { name: 'fillAlpha', label: 'fill alpha' })
+        layerField(layer, { name: 'fillRed', label: 'Fill red' }),
+        layerField(layer, { name: 'fillGreen', label: 'Fill green' }),
+        layerField(layer, { name: 'fillBlue', label: 'Fill blue' }),
+        layerField(layer, { name: 'fillAlpha', label: 'Fill alpha' })
       ]
     }),
 
     // Stroke
     fieldGroup(layer, {
       flag: 'hasStroke',
-      name: 'stroke',
+      name: 'Stroke',
       children: [
-        layerField(layer, { name: 'strokeRed', label: 'stroke red' }),
-        layerField(layer, { name: 'strokeGreen', label: 'stroke green' }),
-        layerField(layer, { name: 'strokeBlue', label: 'stroke blue' }),
-        layerField(layer, { name: 'strokeAlpha', label: 'stroke alpha' }),
-        layerField(layer, { name: 'strokeWidth', label: 'stroke width' })
+        layerField(layer, { name: 'strokeRed', label: 'Stroke red' }),
+        layerField(layer, { name: 'strokeGreen', label: 'Stroke green' }),
+        layerField(layer, { name: 'strokeBlue', label: 'Stroke blue' }),
+        layerField(layer, { name: 'strokeAlpha', label: 'Stroke alpha' }),
+        layerField(layer, { name: 'strokeWidth', label: 'Stroke width' })
       ]
     }),
 
     // Rotation
     fieldGroup(layer, {
       flag: 'hasRotation',
-      name: 'rotation',
+      name: 'Rotation',
       children: [
         layerField(layer, { name: 'radians' }),
         layerField(layer, { name: 'rotateX', label: 'X origin' }),
@@ -199,20 +200,20 @@ function layerFields (layer) {
     // Scale
     fieldGroup(layer, {
       flag: 'hasScale',
-      name: 'scale',
+      name: 'Scale',
       children: [
-        layerField(layer, { name: 'scaleVertical', label: 'vertical' }),
-        layerField(layer, { name: 'scaleHorizontal', label: 'horizontal' })
+        layerField(layer, { name: 'scaleVertical', label: 'Vertical' }),
+        layerField(layer, { name: 'scaleHorizontal', label: 'Horizontal' })
       ]
     }),
 
     // Skew
     fieldGroup(layer, {
       flag: 'hasSkew',
-      name: 'skew',
+      name: 'Skew',
       children: [
-        layerField(layer, { name: 'skewVertical', label: 'vertical' }),
-        layerField(layer, { name: 'skewHorizontal', label: 'horizontal' })
+        layerField(layer, { name: 'skewVertical', label: 'Vertical' }),
+        layerField(layer, { name: 'skewHorizontal', label: 'Horizontal' })
       ]
     })
   ]
@@ -227,7 +228,7 @@ function layerField (layer, { name, label }) {
     value: layer.props[name],
     classes: {
       'b--red': layer.errors[name],
-      'bw2': layer.errors[name]
+      bw2: layer.errors[name]
     },
     label: label || name,
     oninput: setProp(name)
@@ -237,11 +238,11 @@ function layerField (layer, { name, label }) {
 // The header for the entire layer area
 function layerHeader (layer) {
   // Wrapper element for the header
-  const div = cs => h('div.b.bb.b--black-20.mv1.code.pv1.flex.justify-between.items-center', cs)
+  const div = cs => h('div.b.bb.b--black-20.mv1.sans-serif.pv1.flex.justify-between.items-center', cs)
   if (layer.renaming) {
     // Return an editable form if they are changing the layer name
     const content = [
-      h('form', {
+      h('form.w-100', {
         on: {
           submit: ev => {
             ev.preventDefault()
@@ -250,25 +251,26 @@ function layerHeader (layer) {
           }
         }
       }, [
-        h('input', {
+        input({
           props: { type: 'text', value: layer.name },
+          class: { w4: true, 'w-100': false },
           on: {
             input: ev => {
               layer.name = ev.currentTarget.value
             }
           }
         }),
-        button({ props: { type: 'submit' } }, 'Set')
+        button('button', { props: { type: 'submit' } }, 'Set')
       ])
     ]
     return div(content)
   }
   const canvasState = layer.canvasState
   return div([
-    h('span.pointer.dib.truncate', {
+    h('span.pointer.dib.truncate.white-90', {
       on: { click: () => layer.toggleFormOpen() }
     }, [
-      h('span.mr1.black-60', layer.formOpen ? '−' : '+'),
+      h('span.mr1', layer.formOpen ? '▲' : '▼'),
       layer.name
     ]),
     h('div', [
@@ -281,7 +283,7 @@ function layerHeader (layer) {
 
 // The button for renaming the layer
 function renameButton (canvasState, layer) {
-  return button({
+  return button('button', {
     on: {
       click: () => {
         layer.renaming = true
@@ -293,7 +295,7 @@ function renameButton (canvasState, layer) {
 
 // Takes the full app component, plus a single element
 function copyButton (canvasState, layer) {
-  return button({
+  return button('button', {
     on: {
       click: () => copyLayer(canvasState, layer)
     }
@@ -313,7 +315,7 @@ function copyLayer (canvasState, layer) {
 // Pushes to the undo/redo history
 // Takes the full app component, plus a single element
 function removeButton (canvasState, layer) {
-  return button({
+  return button('button', {
     on: {
       click: () => {
         canvasState.pushToHistory({
@@ -377,12 +379,13 @@ function fieldGroup (layer, opts) {
       'b--green': isOpen
     }
   }, [
-    h('input', {
+    input({
       props: { type: 'checkbox', checked: isOpen, id: htmlID },
       dataset: { name: layer.name },
+      class: { 'w-100': false },
       on: { change: () => layer.toggleFieldGroup(flag) }
     }),
-    h('label.pointer.code.ml2.b.black-60', {
+    h('label.pointer.sans-serif.white-90.ml2.b.black-60', {
       props: { htmlFor: htmlID },
       style: { userSelect: 'none' }
     }, name),

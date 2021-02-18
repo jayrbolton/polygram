@@ -8,28 +8,6 @@ function Canvas (canvasState) {
     canvasState,
     isCapturing: false,
 
-    // Dumb toggle on play/pause of the canvas record feature.
-    toggleCapture () {
-      this.isCapturing ? this.stopCapture() : this.startCapture()
-    },
-
-    // Start recording video of the canvas.:w
-    startCapture () {
-      if (!window.MediaRecorder || !window.MediaRecorder.isTypeSupported('video/webm')) {
-        window.alert('Video recording is not supported in your browser. Try Firefox or Chrome instead.')
-        return
-      }
-      this.mediaRecorder = new window.MediaRecorder(this.canvas.captureStream(), {
-        mimeType: 'video/webm'
-      })
-      this.mediaRecorder.ondataavailable = ev => {
-        downloadBlob(ev.data, 'polygram.webm')
-      }
-      this.mediaRecorder.start()
-      this.isCapturing = true
-      this._render()
-    },
-
     // Stop and save the canvas recording as a webm video.
     // Most of the actual video save logic is found in the ondataavailable event listener above.
     stopCapture () {
@@ -40,30 +18,17 @@ function Canvas (canvasState) {
 
     view () {
       const leftPad = this.canvasState.sidebarWidth + 20 + 'px'
-      const canvas = h('canvas', {
+      const canvas = h('canvas.dib', {
         props: { id: 'tutorial' },
         hook: {
           insert: (vnode) => handleCanvasDrawLoop(vnode, this)
         }
       })
-      return h('div.fixed.top-0', { style: { left: leftPad } }, [
-        recordComponent(this),
+      return h('div.fixed.top-0.tc.w-100.pt3.z-0', { style: { paddingLeft: leftPad } }, [
         canvas
       ])
     }
   })
-}
-
-// Button component to record the canvas to a webm video
-function recordComponent (canvasCmp) {
-  return h('div.tr.pv1', [
-    h('span.mr1.color--black-40.code', [
-      canvasCmp.isCapturing ? 'Recording...' : ''
-    ]),
-    button({
-      on: { click: () => canvasCmp.toggleCapture() }
-    }, canvasCmp.isCapturing ? 'Stop & save' : 'Record canvas', 'a')
-  ])
 }
 
 // Initialize and run the animation loop for the canvas

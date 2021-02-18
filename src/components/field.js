@@ -1,14 +1,15 @@
 const { h } = require('uzu')
 const fieldset = require('./fieldset')
+const input = require('./input')
 
 module.exports = function field ({ type = 'text', classes = {}, value, oninput, label }) {
-  const inp = h('input.w-100.code.f6.pa1', {
+  const inp = input({
     class: classes,
-    props: { type: 'text', value },
+    props: { type, value },
     on: { input: oninput }
   })
   return fieldset([
-    h('label.code.dib.mb1', { style: { userSelect: 'none' } }, label),
-    h('div', { css: { root: [ 'float: right' ] } }, inp)
+    h('label.sans-serif.dib.mb1.white-80', { style: { userSelect: 'none' } }, label),
+    h('div', { css: { root: ['float: right'] } }, inp)
   ])
 }
