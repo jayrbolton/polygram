@@ -3,12 +3,14 @@ const deepMerge = require('../utils/deepMerge')
 
 module.exports = function input (opts) {
   opts = deepMerge({
+    style: {
+      paddingTop: '0.3rem',
+      paddingBottom: '0.2rem'
+    },
     class: {
       'w-100': true,
       'sans-serif': true,
-      pt2: true,
       f6: true,
-      pb1: true,
       ph2: true,
       'bg-black-40': true,
       'white-90': true,

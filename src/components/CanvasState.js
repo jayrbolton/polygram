@@ -5,8 +5,8 @@ const { Constants } = require('./Constants')
 const { Modal } = require('./Modal')
 const { Layer } = require('./Layer')
 const button = require('./button')
-const fieldset = require('./fieldset')
-const input = require('./input')
+const field = require('./field')
+const icon = require('./icon')
 
 const HELP_LINK = 'https://github.com/jayrbolton/polygram/blob/master/HELP.md'
 
@@ -16,7 +16,7 @@ function CanvasState () {
   const cs = Component({
     canvasWidth: 800,
     canvasHeight: 800,
-    sidebarWidth: 400,
+    sidebarWidth: 340,
     fillStyle: 'black',
     // Collections of shape elements, both accessed by key and ordered.
     layers: {},
@@ -92,7 +92,7 @@ function CanvasState () {
     // Left sidepanel for controlling the state of the canvas
     view () {
       const layers = this.layerOrder.map(layer => layer.view())
-      return h('div.pv2.pl2.pr3.relative.bg-black-40.z-1', {
+      return h('div.pv2.pl2.pr3.relative.bg-white-20.z-1', {
         style: { width: this.sidebarWidth + 'px' }
       }, [
         this.openModal.view({
@@ -106,27 +106,30 @@ function CanvasState () {
         h('div.flex.justify-end', [
           undoButton(this),
           redoButton(this),
-          button('button', { on: { click: () => this.shareState() } }, 'Share'),
-          button('button', { on: { click: () => this.openModal.open() } }, 'Open'),
+          button('button', { on: { click: () => this.shareState() } }, 'Save'),
+          button('button', { on: { click: () => this.openModal.open() } }, 'Load'),
           button('button', {
             props: {
               href: HELP_LINK,
               target: '_blank'
             }
-          }, 'Help!', 'a')
+          }, 'Help', 'a')
         ]),
         // Canvas options section
-        h('label.b.db.sans-serif.white-90.f5', 'Canvas'),
-        h('div.flex.justify-between', [
-          canvasOptionField(this.canvasWidth, 'Width', 'number', w => this.changeCanvasWidth(w)),
-          canvasOptionField(this.canvasHeight, 'Height', 'number', h => this.changeCanvasHeight(h)),
-          canvasOptionField(this.fillStyle, 'Color', 'text', fs => this.changeFillStyle(fs))
-        ]),
+        canvasLabelTitle('Size'),
+        canvasOptionField(this.canvasWidth, 'Width', 'number', w => this.changeCanvasWidth(w)),
+        canvasOptionField(this.canvasHeight, 'Height', 'number', h => this.changeCanvasHeight(h)),
+        canvasLabelTitle('Background'),
+        canvasOptionField(this.fillStyle, 'Red', 'text', fs => this.changeFillStyle(fs)),
+        canvasOptionField(this.fillStyle, 'Green', 'text', fs => this.changeFillStyle(fs)),
+        canvasOptionField(this.fillStyle, 'Blue', 'text', fs => this.changeFillStyle(fs)),
         // Constant values
-        this.constants ? h('div', this.constants.view()) : '',
+        // this.constants ? h('div', this.constants.view()) : '',
         // Layers header
-        h('div.flex.justify-between.items-center.mt4.pt2.bt.bw-2.b--black-20', [
-          h('span.sans-serif.white-80', layers.length + ' ' + (layers.length > 1 ? 'layers' : 'layer')),
+        h('div.flex.justify-between.items-center.mt2.pb2.mb1.bb.bw-2.b--black-20', [
+          h('span.sans-serif.white-80', [
+            layers.length + ' ' + (layers.length > 1 ? 'layers' : 'layer')
+          ]),
           newLayerButton(this)
         ]),
         // All layer components
@@ -137,6 +140,10 @@ function CanvasState () {
   cs.addLayer(Layer(cs))
   cs.constants = Constants(cs) // Constant values that can be used inside layers
   return cs
+}
+
+function canvasLabelTitle (text) {
+  return h('label.b.db.sans-serif.white-90.f5.mv2', text)
 }
 
 // Convert the canvas state to json text
@@ -240,18 +247,15 @@ function redoButton (canvasState) {
 
 // Field element for canvas width, height, fill, etc
 function canvasOptionField (value, label, type, onchange) {
-  return fieldset([
-    h('label.sans-serif.white-80.db.mb1.mt2.f6', { css: { root: ['font-family: mono'] } }, label),
-    input({
-      props: { type, value },
-      on: {
-        input: ev => {
-          const newval = ev.currentTarget.value
-          onchange(newval)
-        }
-      }
-    })
-  ])
+  return field({
+    label,
+    value,
+    type,
+    oninput: ev => {
+      const newval = ev.currentTarget.value
+      onchange(newval)
+    }
+  })
 }
 
 // Create a new shape
@@ -264,7 +268,7 @@ function newLayerButton (canvasState) {
         canvasState.addLayer(layer)
       }
     }
-  }, '+ Layer')
+  }, [icon('plus'), ' Layer'])
 }
 
 // Restore from a json string

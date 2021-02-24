@@ -1,5 +1,4 @@
 const { Component, h } = require('uzu')
-const button = require('./button')
 
 module.exports = { Canvas }
 
@@ -18,7 +17,7 @@ function Canvas (canvasState) {
 
     view () {
       const leftPad = this.canvasState.sidebarWidth + 20 + 'px'
-      const canvas = h('canvas.dib', {
+      const canvas = h('canvas.dib.ba.b--white-20', {
         props: { id: 'tutorial' },
         hook: {
           insert: (vnode) => handleCanvasDrawLoop(vnode, this)

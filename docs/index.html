@@ -2,10 +2,24 @@
 <html style="height: 100%; min-height: 100%">
 <head>
   <title>polygram</title>
+  <script src="https://unpkg.com/feather-icons"></script>
   <link href="build.css" rel="stylesheet">
+  <style>
+    /* Hide number input buttons */
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+          margin: 0;
+    }
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+  </style>
 </head>
 
-<body style="height: 100%; min-height: 100%">
+<body style="height: 100%; min-height: 100%; background: black;">
 <script src='bundle.js'></script>
 </body>
 </html>

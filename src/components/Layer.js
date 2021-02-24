@@ -3,6 +3,7 @@ const { Component, h } = require('uzu')
 const field = require('./field')
 const button = require('./button')
 const input = require('./input')
+const icon = require('./icon')
 
 module.exports = { Layer }
 
@@ -191,7 +192,7 @@ function layerFields (layer) {
       flag: 'hasRotation',
       name: 'Rotation',
       children: [
-        layerField(layer, { name: 'radians' }),
+        layerField(layer, { name: 'radians', label: 'Radians' }),
         layerField(layer, { name: 'rotateX', label: 'X origin' }),
         layerField(layer, { name: 'rotateY', label: 'Y origin' })
       ]
@@ -238,7 +239,7 @@ function layerField (layer, { name, label }) {
 // The header for the entire layer area
 function layerHeader (layer) {
   // Wrapper element for the header
-  const div = cs => h('div.b.bb.b--black-20.mv1.sans-serif.pv1.flex.justify-between.items-center', cs)
+  const div = cs => h('div.b.mv1.sans-serif.pv1.flex.justify-between.items-center', cs)
   if (layer.renaming) {
     // Return an editable form if they are changing the layer name
     const content = [
@@ -327,7 +328,7 @@ function removeButton (canvasState, layer) {
         canvasState._render()
       }
     }
-  }, 'Remove')
+  }, [icon('trash-2')])
 }
 
 // Convert some expression in a field into a callable function object
@@ -373,11 +374,13 @@ function fieldGroup (layer, opts) {
   // Unique ID for the html `for` and `id` attrs
   const htmlID = 'field-flag-' + layer.id + '-' + flag
   const isOpen = layer.flags[flag]
-  return h('div.bl.bw2.pl1.pb1.mb2', {
+  return h('div.pb1.mb2', {
+    /*
     class: {
       'b--black-20': !isOpen,
       'b--green': isOpen
     }
+    */
   }, [
     input({
       props: { type: 'checkbox', checked: isOpen, id: htmlID },

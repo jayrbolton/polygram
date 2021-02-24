@@ -6,6 +6,7 @@ const { Component, h } = require('uzu')
 
 const button = require('./button')
 const input = require('./input')
+const icon = require('./icon')
 
 // For assigning a unique name to new constants
 let id = 0
@@ -77,7 +78,7 @@ function Constants (canvasState) {
     view () {
       const inputs = this.arr.map((name, idx) => {
         const value = this.obj[name]
-        return h('div.flex.w-100', [
+        return h('div.flex.items-center.justify-between.w-100', [
           input({
             class: {
               'b--red': this.errors[name]
@@ -87,7 +88,7 @@ function Constants (canvasState) {
               value: name || ''
             },
             style: {
-              width: '7rem'
+              width: '9rem'
             },
             on: {
               input: ev => {
@@ -112,7 +113,7 @@ function Constants (canvasState) {
           button('button', {
             on: { click: () => this.removeConstant(name) },
             class: {f7: true}
-          }, 'Remove')
+          }, [icon('trash-2')])
         ])
       })
       return h('div', [
@@ -130,7 +131,7 @@ function Constants (canvasState) {
           ]),
           button('button', {
             on: { click: ev => this.appendConstant() }
-          }, '+ Constant')
+          }, [icon('plus'), ' Constant'])
         ]),
         h('div', {
           class: { dn: !this.isOpen }
