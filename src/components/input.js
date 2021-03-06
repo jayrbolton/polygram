@@ -8,7 +8,6 @@ module.exports = function input (opts) {
       paddingBottom: '0.2rem'
     },
     class: {
-      'w-100': true,
       'sans-serif': true,
       f6: true,
       ph2: true,

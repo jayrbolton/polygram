@@ -45,17 +45,21 @@ function handleCanvasDrawLoop (vnode, canvasCmp) {
   ctx.save()
   function draw (ts) {
     document._ts = ts
-    ctx.fillStyle = canvasState.fillStyle || 'white'
+    const fs = canvasState.fillStyle || [0, 0, 0]
+    ctx.fillStyle = 'rgb(' + fs.join(',') + ')'
     ctx.fillRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
-    for (let id in canvasState.layers) {
-      let shape = canvasState.layers[id]
-      if (shape.draw) shape.draw(ctx)
+    for (const id in canvasState.layers) {
+      const shape = canvasState.layers[id]
+      if (shape.draw) {
+        shape.draw(ctx)
+      }
     }
     window.requestAnimationFrame(draw)
   }
   draw()
 }
 
+/*
 // Auto-download a blob object
 function downloadBlob (blob, filename) {
   const link = document.createElement('a')
@@ -67,3 +71,4 @@ function downloadBlob (blob, filename) {
   link.click()
   link.remove()
 }
+*/

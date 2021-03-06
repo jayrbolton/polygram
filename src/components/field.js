@@ -7,8 +7,8 @@ module.exports = function field ({ type = 'text', classes = {}, value, oninput, 
     props: { type, value },
     on: { input: oninput }
   })
-  return h('fieldset.bn.pa0.mv1.flex.items-center', [
-    h('label.sans-serif.white-60.db', { style: { userSelect: 'none', width: '6rem' } }, label),
+  return h('fieldset.bn.pa0.mv1.flex.items-center.justify-between', [
+    h('label.sans-serif.white-60.db', { style: { userSelect: 'none' } }, label),
     h('div', { css: { root: ['float: right'] } }, inp)
   ])
 }

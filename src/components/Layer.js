@@ -114,7 +114,7 @@ function Layer (canvasState) {
     },
 
     view () {
-      return h('div', { key: this.name }, [
+      return h('div.bg-white-10.pa2.bb.b--black-80', { key: this.name }, [
         layerHeader(this),
         h('div', {
           class: { dn: !this.formOpen }

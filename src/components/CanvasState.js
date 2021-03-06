@@ -17,7 +17,7 @@ function CanvasState () {
     canvasWidth: 800,
     canvasHeight: 800,
     sidebarWidth: 340,
-    fillStyle: 'black',
+    fillStyle: [0.0, 0.0, 0.0],
     // Collections of shape elements, both accessed by key and ordered.
     layers: {},
     layerOrder: [],
@@ -77,9 +77,14 @@ function CanvasState () {
       this.elm.width = width
     },
 
-    changeFillStyle (s) {
-      // Will update on next frame
-      this.fillStyle = s
+    changeBGRed (f) {
+      this.fillStyle[0] = f
+    },
+    changeBGGreen (f) {
+      this.fillStyle[1] = f
+    },
+    changeBGBlue (f) {
+      this.fillStyle[2] = f
     },
 
     // Restore canvas state (constants and layers) from a base64-encoded compressed json blob
@@ -92,7 +97,7 @@ function CanvasState () {
     // Left sidepanel for controlling the state of the canvas
     view () {
       const layers = this.layerOrder.map(layer => layer.view())
-      return h('div.pv2.pl2.pr3.relative.bg-white-20.z-1', {
+      return h('div.pv2.relative.bg-white-20.z-1', {
         style: { width: this.sidebarWidth + 'px' }
       }, [
         this.openModal.view({
@@ -116,17 +121,19 @@ function CanvasState () {
           }, 'Help', 'a')
         ]),
         // Canvas options section
-        canvasLabelTitle('Size'),
-        canvasOptionField(this.canvasWidth, 'Width', 'number', w => this.changeCanvasWidth(w)),
-        canvasOptionField(this.canvasHeight, 'Height', 'number', h => this.changeCanvasHeight(h)),
-        canvasLabelTitle('Background'),
-        canvasOptionField(this.fillStyle, 'Red', 'text', fs => this.changeFillStyle(fs)),
-        canvasOptionField(this.fillStyle, 'Green', 'text', fs => this.changeFillStyle(fs)),
-        canvasOptionField(this.fillStyle, 'Blue', 'text', fs => this.changeFillStyle(fs)),
+        h('div.pa2', [
+          canvasLabelTitle('Canvas size'),
+          canvasOptionField(this.canvasWidth, 'Width', 'number', w => this.changeCanvasWidth(w)),
+          canvasOptionField(this.canvasHeight, 'Height', 'number', h => this.changeCanvasHeight(h)),
+          canvasLabelTitle('Background'),
+          canvasOptionField(this.fillStyle[0], 'Red', 'text', fs => this.changeBGRed(fs)),
+          canvasOptionField(this.fillStyle[1], 'Green', 'text', fs => this.changeBGGreen(fs)),
+          canvasOptionField(this.fillStyle[2], 'Blue', 'text', fs => this.changeBGBlue(fs))
+        ]),
         // Constant values
         // this.constants ? h('div', this.constants.view()) : '',
         // Layers header
-        h('div.flex.justify-between.items-center.mt2.pb2.mb1.bb.bw-2.b--black-20', [
+        h('div.flex.justify-between.items-center.mb1.mt2.pt2.bt.bw-2.b--black-20.pa2', [
           h('span.sans-serif.white-80', [
             layers.length + ' ' + (layers.length > 1 ? 'layers' : 'layer')
           ]),
@@ -286,7 +293,7 @@ function restoreJson (json, canvasState) {
   const data = JSON.parse(json)
   canvasState.canvasWidth = data.w
   canvasState.canvasHeight = data.h
-  canvasState.fillStyle = data.fs || 'white'
+  canvasState.fillStyle = data.fs || [0, 0, 0]
   canvasState.layers = {}
   canvasState.layerOrder = []
   const layers = data.es || []
