@@ -1,5 +1,2 @@
-- load modal with code
-- save modal with code
 - intro modal with examples
-- fix icon warning
 - debug undo behavior

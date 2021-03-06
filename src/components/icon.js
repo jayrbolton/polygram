@@ -2,8 +2,8 @@ const { h } = require('uzu')
 
 module.exports = function icon (name) {
   const style = {
-    width: '0.9rem',
-    height: '0.9rem',
+    width: '14px',
+    height: '14px',
     stroke: 'currentColor',
     strokeWidth: 0,
     strokeLinecap: 'round',

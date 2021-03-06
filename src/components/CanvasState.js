@@ -63,7 +63,7 @@ function CanvasState () {
       const jsonState = stateToJson(this)
       const result = persistCompressed(jsonState)
       document.location.hash = result
-      this.compressedState.content = window.location.href
+      this.compressedState.content = result
       this._render()
     },
 
@@ -113,12 +113,12 @@ function CanvasState () {
           redoButton(this),
           button('button', { on: { click: () => this.shareState() } }, 'Save'),
           button('button', { on: { click: () => this.openModal.open() } }, 'Load'),
-          button('button', {
+          button('a', {
             props: {
               href: HELP_LINK,
               target: '_blank'
             }
-          }, 'Help', 'a')
+          }, 'Help')
         ]),
         // Canvas options section
         h('div.pa2', [
@@ -190,15 +190,14 @@ function openModalContent (canvasState) {
       on: {
         submit: ev => {
           ev.preventDefault()
-          const link = ev.currentTarget.querySelector('textarea').value
-          const compressed = link.match(/#(.+)$/)[1]
-          canvasState.restoreCompressed(compressed)
+          const code = ev.currentTarget.querySelector('textarea').value
+          canvasState.restoreCompressed(code)
           canvasState.openModal.close()
         }
       }
     }, [
-      h('p', 'Paste a polygram link:'),
-      h('textarea.w-100', { props: { rows: 4 } }),
+      h('p', 'Paste the code for a polygram:'),
+      saveLoadTextarea({ props: { rows: 8 } }),
       button('button', {}, 'Load')
     ])
   ])
@@ -210,14 +209,21 @@ function shareModalContent (canvasState) {
     return h('div', [h('p', 'Loading...')])
   }
   return h('div', [
-    h('p', 'Unique link for this polygram:'),
-    h('textarea.w-100', {
+    h('p', 'Copy and paste the following code representing your polygram:'),
+    saveLoadTextarea({
+      attrs: {
+        readonly: true
+      },
       props: {
         value: canvasState.compressedState.content,
-        rows: 6
+        rows: 8
       }
     })
   ])
+}
+
+function saveLoadTextarea (data) {
+  return h('textarea.pa1.bn.w-100.bg-mid-gray.white', data)
 }
 
 function undoButton (canvasState) {

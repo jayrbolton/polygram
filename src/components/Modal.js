@@ -17,20 +17,18 @@ function Modal () {
       this._render()
     },
     view ({ title, content }) {
-      return h('div.code', [
+      return h('div.sans-serif.white', [
         // Backdrop
-        h('div.fixed.w-100.h-100.top-0.left-0.o-20.bg-black.z-1', {
+        h('div.fixed.w-100.h-100.top-0.left-0.o-60.bg-black.z-1', {
           class: {
             dn: !this.isOpen
-          },
-          style: {
           },
           on: {
             click: () => this.close()
           }
         }),
         // Modal
-        h('div.fixed.top-1.shadow-3.bg-white.z-2', {
+        h('div.fixed.top-1.bg-dark-gray.shadow-3.z-2', {
           style: {
             left: '50%',
             width: '32rem',
