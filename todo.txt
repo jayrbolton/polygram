@@ -1,2 +1,3 @@
-- intro modal with examples
+- add link to manual in intro modal
+- add link to intro modal in load modal
 - debug undo behavior

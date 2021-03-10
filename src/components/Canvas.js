@@ -46,11 +46,7 @@ function handleCanvasDrawLoop (vnode, canvasCmp) {
   function draw (ts) {
     document._ts = ts
     const fs = canvasState.fillStyle || [0, 0, 0]
-    if (typeof fs === 'string') {
-      ctx.fillStyle = fs
-    } else {
-      ctx.fillStyle = 'rgb(' + fs.join(',') + ')'
-    }
+    ctx.fillStyle = 'rgb(' + fs.join(',') + ')'
     ctx.fillRect(0, 0, canvasState.canvasWidth, canvasState.canvasHeight)
     for (const id in canvasState.layers) {
       const shape = canvasState.layers[id]

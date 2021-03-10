@@ -61,6 +61,7 @@ function CanvasState () {
       this.shareModal.open()
       this._render()
       const jsonState = stateToJson(this)
+      console.log('jsonstate', jsonState)
       const result = persistCompressed(jsonState)
       document.location.hash = result
       this.compressedState.content = result
@@ -101,11 +102,11 @@ function CanvasState () {
         style: { width: this.sidebarWidth + 'px' }
       }, [
         this.openModal.view({
-          title: 'Open',
+          title: 'Load',
           content: openModalContent(this)
         }),
         this.shareModal.view({
-          title: 'Share Polygram',
+          title: 'Save',
           content: shareModalContent(this)
         }),
         h('div.flex.justify-end', [
@@ -300,6 +301,9 @@ function restoreJson (json, canvasState) {
   canvasState.canvasWidth = data.w
   canvasState.canvasHeight = data.h
   canvasState.fillStyle = data.fs || [0, 0, 0]
+  if (typeof canvasState.fillStyle === 'string') {
+    canvasState.fillStyle = [0, 0, 0]
+  }
   canvasState.layers = {}
   canvasState.layerOrder = []
   const layers = data.es || []
