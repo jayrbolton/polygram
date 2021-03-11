@@ -4,7 +4,7 @@ const { Modal } = require('./Modal')
 
 module.exports = { IntroModal }
 
-function IntroModal () {
+function IntroModal (canvasState) {
   const modal = Modal()
   return Component({
     modal,
@@ -12,11 +12,16 @@ function IntroModal () {
       this.modal.open()
       this._render()
     },
+    loadExample ({ name, code }) {
+      canvasState.restoreCompressed(code)
+      this.modal.close()
+      this._render()
+    },
     view () {
       return h('div', [
         this.modal.view({
           title: 'Welcome to Polygram',
-          content: content(),
+          content: content(this),
           width: 48
         })
       ])
@@ -27,12 +32,12 @@ function IntroModal () {
 const EXAMPLES = [
   {
     name: 'Shimmering star',
-    code: 'rl203XSTQh8EL1RbxiLCCpJCmob8e0eyHJxdF0Zz53E8ujrBAfg9IoMuna0DDt9a1FtgUJPYbKAGViBWFQMZEidogZ+gE+5JaQ28FdpJFvTaeOGV6YF7ux9Sb96arZwmtvIwlbXQqXxmsAtgp5rwHyjDBmanolghqR8Klhii4yVqaYe1bICXcX1Sz1ZKWiGpR72Xk+KD3nUCeMHAxc3iKJQRNWTS+FVugOAoEwRehe8WTvU5LhCxyG4z7/IZHfkKs3mmZrML4UM1njwuSZMB79J6RTefMtKoom/AxWFqfjFW/Zre/6c9uDmBF9kdddxky7F2xZpWrWiU6IPTCRyh8U7jZUJXeGD5Ga0Y4i+K6eGCYVocpZ0jnKvzHyNIru4=',
+    code: 'eJyNkctqwzAQRX/FDBScVgljk0DRrl203XSTQh8EL1RbxiLCCpJCmob8e0eyHJxdF0Zz53E8ujrBAfg9IoMuna0DDt9a1FtgUJPYbKAGViBWFQMZEidogZ+gE+5JaQ28FdpJFvTaeOGV6YF7ux9Sb96arZwmtvIwlbXQqXxmsAtgp5rwHyjDBmanolghqR8Klhii4yVqaYe1bICXcX1Sz1ZKWiGpR72Xk+KD3nUCeMHAxc3iKJQRNWTS+FVugOAoEwRehe8WTvU5LhCxyG4z7/IZHfkKs3mmZrML4UM1njwuSZMB79J6RTefMtKoom/AxWFqfjFW/Zre/6c9uDmBF9kdddxky7F2xZpWrWiU6IPTCRyh8U7jZUJXeGD5Ga0Y4i+K6eGCYVocpZ0jnKvzHyNIru4=',
     imgSrc: 'images/shimmering-star.png'
   },
   {
     name: 'Polygon ripple',
-    code: 'eJzNUk1Pg0AQ/SubMU1aJXVZCwduelAvXmriR0wPG1hk002XLNvU2vDfnWWBlqQmnIxceO8xX8ybA+wggXgRQQBFj/IK4QVjDHGK+GMVgHDvA+SQHKDg1b1UChJrtiJwdKktt1JvIMm5qrz2bI1ei4GyFrsBT7kSvkodQOlKVzJzneCGXJEnbot5rrQ2U1tNZ+SS0DnFJ0IkZ2RCFm4+XcomI6QU6ReiiA6TJbkmIXX5sQvZY8gixhCJJULayTn+0VJk+JFFUcsfjBD4T9SzO7XFaRlt6a0qC47h03Gzei10patmM02zpprnbbMTxTfsadsw7PirzCyaxpDjYl+EsRIX6hNQeNRGfuuN7SS37GMQzFkMrXoa2eqGZ5JvqibTOHPF2wl+R4yO4bRQarX/1BhZB394HWys85Ozzv9+HMcroMMb6Lk3pafdFYT/xlcanfe10Uf7mkqTKlxvvap/AEQ4PnU=',
+    code: 'eJzNUstugzAQ/BVrpUikRYmhkAO39tD20ksq9aEqBwtMsWJhZBylacS/d80jgahRkHopHNgddna9ntnDFiJYBCG4kB2itITog7r4rlyIbYJfbr97SCHaQ8bKeyElREZvuGvTpTLMCJX3oGej1ZpDlDJZtsiabwd5zCRvGJULhe1cisQOghtyTZ6YyWapVEo7pnSm5IrQGcUnxEhMyYQEeNZYFaJmeJRi+oVRSIdkQebEo5a/sCW7rkRgC492cIoLLXmCPy/PxcDxKZ0H05b4oDnP7SHCcNTBbYOgx7+TG7wIwJ6j6Z7f49/KImPYwBl3bw3mWa3LWqV6cZze5e0+PaQ54SFtB3pd/ioSgwbyMUeRX7g2AsVtCAg8Ki2+VW46yAp/LIKZv4AW7Ve2uGaJYLnVeLBOsw+xBdZ8/K1u3cTvGKOlrCSFkrtPhfTKHeHenjn/ZF9/rDUnv1rzvHuPNqUn3qNDL9ETa3j/Rmx6Rmw6EJte0DUWOpZ4vdWq+gH3UWKl',
     imgSrc: 'images/polygon-ripple.png'
   },
   {
@@ -42,7 +47,7 @@ const EXAMPLES = [
   },
   {
     name: 'Bending crystals',
-    code: '',
+    code: 'eJxtkc1qwzAQhF/FLBTc1nHkQNLiW3toe+klgf4QclBtGYsIy0gKaWry7t21bMeGnKT5NLtajRo4QvrIWARltxYWUvhRPNtDBBmK7RYyiBLGdrsIBIEGCkgbKLl9kUpB6sxBRCTX2nEndQVpwZX1bOOM3ouRabMXx4kh46o7P0dQU2crc7oIVjSCrmUrcAKUv34X3Afv3JVxobQ2oQxugoTdBnfBA3lO1z3zsafAydciR2frsbIKnQ3pmMWMJbiGco5+Iovlsqt4NUJUwyxEntVBTMCTqkuOJKYa2z7e3+Mtnkz7eNZ1WoxQ3ysZyKfMXUkuIhjkhzBOYoCQMg/etJF/unI9onAvJpyqHYvo2Nlxw3PJK9uHkmk7DuWSyixZYTBUQB8uvrCADeq7VfiV9EDFT8LMUO7O/01ls2w=',
     imgSrc: 'images/bending-crystals.png'
   },
   {
@@ -67,10 +72,15 @@ const EXAMPLES = [
   }
 ]
 
-function content () {
+function content (component) {
   const examples = EXAMPLES.map(({ name, code, imgSrc }) => {
     return h('div.tc.pointer.grow.mb3.bg-black-50.pa2', {
-      style: { width: '24%' },
+      on: {
+        click: () => {
+          component.loadExample({ name, code })
+        }
+      },
+      style: { width: '24%' }
     }, [
       h('div.mb1.b.white-80', name),
       h('img', { props: { src: imgSrc } })
@@ -78,6 +88,13 @@ function content () {
   })
   return h('div', [
     h('p', 'Get started by loading a canvas below'),
-    h('div.flex.justify-between.flex-wrap', examples)
+    h('div.flex.justify-between.flex-wrap', examples),
+    h('p.f4', [
+      'You can also ',
+      h('a.b.dim.no-underline.light-blue', {
+        props: { href: 'https://github.com/jayrbolton/polygram/blob/master/HELP.md' },
+        attrs: { target: '_blank' }
+      }, 'read the full manual')
+    ])
   ])
 }

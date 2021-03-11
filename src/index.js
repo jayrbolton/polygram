@@ -11,7 +11,8 @@ function App () {
   // The actual canvas element, which wraps the draw() function
   const canvas = Canvas(canvasState)
   canvasState.canvas = canvas
-  const introModal = IntroModal()
+  const introModal = IntroModal(canvasState)
+  window._openIntroModal = introModal.open.bind(introModal)
   return Component({
     canvasState,
     canvas,

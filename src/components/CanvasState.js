@@ -115,9 +115,8 @@ function CanvasState () {
           button('button', { on: { click: () => this.shareState() } }, 'Save'),
           button('button', { on: { click: () => this.openModal.open() } }, 'Load'),
           button('a', {
-            props: {
-              href: HELP_LINK,
-              target: '_blank'
+            on: {
+              click: () => window._openIntroModal()
             }
           }, 'Help')
         ]),
@@ -199,7 +198,7 @@ function openModalContent (canvasState) {
     }, [
       h('p', 'Paste the code for a polygram:'),
       saveLoadTextarea({ props: { rows: 8 } }),
-      button('button', {}, 'Load')
+      button('button', { class: { ma1: false, mt2: true } }, 'Load')
     ])
   ])
 }
